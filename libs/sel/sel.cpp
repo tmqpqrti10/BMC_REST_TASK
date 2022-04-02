@@ -3,6 +3,10 @@
 extern sel_msg_t g_sel_data[SEL_ELEMS_MAX];
 extern sel_hdr_t g_sel_hdr;
 extern int find_sensor_name(uint8_t sType, uint8_t sNum, string &msg);
+
+//14:29
+
+
 /**
  * @brief system time 변경 함수
  *
