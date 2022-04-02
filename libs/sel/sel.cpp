@@ -1586,6 +1586,8 @@ int rest_get_eventlog_config(char *ret)
         ipmi_get_event_desc(buf_des, &msg);
         sprintf(buf_ret, "\t\t \"DESCRIPTION\": \"%s\",\n", buf_des);
         strcat(ret, buf_ret);
+
+        // ----------------------------------- 14:25 
         // sel test
         // #if 0
         //     if (msg.msg[12] == 0x01) { // Threshold Sensor
