@@ -1682,21 +1682,21 @@ int rest_get_eventlog_config(char *ret)
 
         // // #endif
 
-        //         sprintf(buf, "\t\t \"SENSOR_ID\": \"%02X\"\n", i);
-        //         strcat(ret, buf);
-        //         if (++i < eventlog_cnt && strlen(ret) < 34000)
-        //         {
-        //             strcat(ret, "\t\t},\n");
-        //         }
-        //         else
-        //         {
-        //             strcat(ret, "\t\t}\n");
-        //             break;
-        //         }
-        //     }
-        //     strcat(ret, "\t]\n  }\n}\n");
-        //     return strlen(ret);
-    }
+                sprintf(buf, "\t\t \"SENSOR_ID\": \"%02X\"\n", i);
+                strcat(ret, buf);
+                if (++i < eventlog_cnt && strlen(ret) < 34000)
+                {
+                    strcat(ret, "\t\t},\n");
+                }
+                else
+                {
+                    strcat(ret, "\t\t}\n");
+                    break;
+                }
+            }
+            strcat(ret, "\t]\n  }\n}\n");
+            return strlen(ret);
+    
 }
 
 // Retrieve time stamp for recent erase operation
