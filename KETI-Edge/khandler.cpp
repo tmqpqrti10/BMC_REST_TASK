@@ -677,3 +677,8 @@ void *ssdp_handler(void)
 //         return 0;
 // }
 
+void sel_generater(void){
+        const char *str = "Limit Exceeded";
+        cout<<"sel generater "<<endl;
+        plat_sel_generater_add_entry(str,0x6f);
+}
