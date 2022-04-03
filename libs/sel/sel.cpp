@@ -3,6 +3,10 @@
 extern sel_msg_t g_sel_data[SEL_ELEMS_MAX];
 extern sel_hdr_t g_sel_hdr;
 extern int find_sensor_name(uint8_t sType, uint8_t sNum, string &msg);
+
+//14:29
+
+
 /**
  * @brief system time 변경 함수
  *
@@ -1586,6 +1590,8 @@ int rest_get_eventlog_config(char *ret)
         ipmi_get_event_desc(buf_des, &msg);
         sprintf(buf_ret, "\t\t \"DESCRIPTION\": \"%s\",\n", buf_des);
         strcat(ret, buf_ret);
+
+        // ----------------------------------- 14:25 
         // sel test
         // #if 0
         //     if (msg.msg[12] == 0x01) { // Threshold Sensor
@@ -1682,20 +1688,20 @@ int rest_get_eventlog_config(char *ret)
 
         // // #endif
 
-        sprintf(buf, "\t\t \"SENSOR_ID\": \"%02X\"\n", i);
-        strcat(ret, buf);
-        if (++i < eventlog_cnt && strlen(ret) < 34000)
-        {
-            strcat(ret, "\t\t},\n");
-        }
-        else
-        {
-            strcat(ret, "\t\t}\n");
-            break;
-        }
-    }
-    strcat(ret, "\t]\n  }\n}\n");
-    return strlen(ret);
+                sprintf(buf, "\t\t \"SENSOR_ID\": \"%02X\"\n", i);
+                strcat(ret, buf);
+                if (++i < eventlog_cnt && strlen(ret) < 34000)
+                {
+                    strcat(ret, "\t\t},\n");
+                }
+                else
+                {
+                    strcat(ret, "\t\t}\n");
+                    break;
+                }
+            }
+            strcat(ret, "\t]\n  }\n}\n");
+            return strlen(ret);
     
 }
 

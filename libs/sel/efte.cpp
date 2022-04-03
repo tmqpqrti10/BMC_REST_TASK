@@ -868,9 +868,10 @@ pef_get_config_param (ipmi_req_t *request,
 	unsigned char id = req->data[0];
 	unsigned char set = req->data[1];
 	unsigned char block = req->data[2];
-
+	cout<<"efte.cpp : "<<(int)id<<endl; 
 	res->cc = CC_INVALID_PARAM;
 	switch(id) { // id = psel.id(ipmitool)
+		
 		case 1: //PEF_CFGPARM_ID_PEF_CONTROL
 			*data++ = 0x11;	// lika: TODO
 			if(get_pef_ctrl(data) < 0){
@@ -919,8 +920,7 @@ pef_get_config_param (ipmi_req_t *request,
 			*data++ = get_policy(set);
 			*data++ = get_chan_dest(set);
 			*data++ = get_alert_string_key(set);
-			res->cc = CC_SUCCESS;
-
+			res->cc = CC_SUCCESS;			
 			break;
 		case 10: //PEF_CFGPARM_ID_SYSTEM_GUID
 			*data++ = 0x1;
@@ -940,7 +940,6 @@ pef_get_config_param (ipmi_req_t *request,
 			*data++ = 0xf;
 			//memcpy(data, guid, strlen(guid));
 			res->cc = CC_SUCCESS;
-
 			break;
 		default:
 			res->cc = CC_INVALID_PARAM;
@@ -1018,13 +1017,14 @@ pef_capabilities_info (ipmi_res_t *response, unsigned char *res_len)
 	ipmi_res_t *res= (ipmi_res_t *) response;
 	unsigned char *data = &res->data[0];
 	unsigned char tmp;
-
+	cout<<"pef_capabilities_info"<<endl;
 	res->cc = CC_SUCCESS;
 	if(get_eft_entry_num(&tmp) < 0){
 		res->cc = CC_UNSPECIFIED_ERROR;
 		return;
 	}
 
+	
 	// lika) TODO data[0], data[1]
 	*data++ = 0x51; // pcap->version
 	*data++ = 0x0F; // pcap->actions
