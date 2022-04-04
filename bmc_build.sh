@@ -35,10 +35,9 @@ cd ../
 
 
 echo " overlay copy ..."
-cp $edge ../overlay/usr/sbin/
-cp $rest ../overlay/usr/sbin/
-cp $kvm ../overlay/usr/sbin/
-cp $smltr ../overlay/usr/sbin/
+cp $edge ../target_sys/firmware/
+cp $rest ../target_sys/firmware/
+cp $kvm ../target_sys/firmware/
 #cp $psu ../overlay/usr/sbin/
 
 echo "scp ..."

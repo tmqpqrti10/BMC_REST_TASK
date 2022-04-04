@@ -284,7 +284,7 @@ int read_adc_value(const int pin, const char *device, int *value)
   int ret;
 
   snprintf(device_name, LARGEST_DEVICE_NAME, device, pin);
-  snprintf(full_name, LARGEST_DEVICE_NAME, "%s/%s", ADC_DIR, device_name);
+  snprintf(full_name, LARGEST_DEVICE_NAME, "%s/%s", lADC_DIR, device_name);
   ret = read_device_int(full_name, &val);
   *value = val; //>>2
   return (ret);
