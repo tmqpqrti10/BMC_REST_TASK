@@ -98,4 +98,8 @@ void storage_add_event(ipmi_req_t *request, ipmi_res_t *response, uint8_t *res_l
 void plat_sel_last_rsv_id(unsigned char *data);
 void plat_sel_threshold_add_entry(Sensor_tpye se_tpye,int se_num,Theshold_type th_type);
 
+
+void ipmi_find_sel_desc(uint8_t *offset, uint8_t *data,uint8_t se_type, const char *ev_desc ,uint8_t ev_type );
+void plat_sel_generater_add_entry(const char *ev_desc,uint8_t ev_type);
+
 #endif
