@@ -1,6 +1,6 @@
 #!/bin/sh
 
-ip=10.0.6.109
+ip=10.0.6.104
 id=root
 password=ketilinux
 path=/usr/sbin

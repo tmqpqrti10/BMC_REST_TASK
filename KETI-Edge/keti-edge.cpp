@@ -110,6 +110,7 @@ int main(void)
 	// std::thread t_manager_monitor(manager_monitor,&sockfd);
 	// std::thread t_sessions_monitor(sessions_monitor,&sockfd);
 	
+	std::thread t_sel_generate(sel_generater);
     
 	while(1)
 	{
@@ -128,6 +129,8 @@ int main(void)
 	// t_account_monitor.join();
 	// t_manager_monitor.join();
 	// t_sessions_monitor.join();
+
+	t_sel_generate.join();
 	
 	return 0;
 }

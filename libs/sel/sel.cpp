@@ -3,6 +3,10 @@
 extern sel_msg_t g_sel_data[SEL_ELEMS_MAX];
 extern sel_hdr_t g_sel_hdr;
 extern int find_sensor_name(uint8_t sType, uint8_t sNum, string &msg);
+
+//14:29
+
+
 /**
  * @brief system time 변경 함수
  *
@@ -1586,6 +1590,8 @@ int rest_get_eventlog_config(char *ret)
         ipmi_get_event_desc(buf_des, &msg);
         sprintf(buf_ret, "\t\t \"DESCRIPTION\": \"%s\",\n", buf_des);
         strcat(ret, buf_ret);
+
+        // ----------------------------------- 14:25 
         // sel test
         // #if 0
         //     if (msg.msg[12] == 0x01) { // Threshold Sensor
@@ -1682,21 +1688,21 @@ int rest_get_eventlog_config(char *ret)
 
         // // #endif
 
-        //         sprintf(buf, "\t\t \"SENSOR_ID\": \"%02X\"\n", i);
-        //         strcat(ret, buf);
-        //         if (++i < eventlog_cnt && strlen(ret) < 34000)
-        //         {
-        //             strcat(ret, "\t\t},\n");
-        //         }
-        //         else
-        //         {
-        //             strcat(ret, "\t\t}\n");
-        //             break;
-        //         }
-        //     }
-        //     strcat(ret, "\t]\n  }\n}\n");
-        //     return strlen(ret);
-    }
+                sprintf(buf, "\t\t \"SENSOR_ID\": \"%02X\"\n", i);
+                strcat(ret, buf);
+                if (++i < eventlog_cnt && strlen(ret) < 34000)
+                {
+                    strcat(ret, "\t\t},\n");
+                }
+                else
+                {
+                    strcat(ret, "\t\t}\n");
+                    break;
+                }
+            }
+            strcat(ret, "\t]\n  }\n}\n");
+            return strlen(ret);
+    
 }
 
 // Retrieve time stamp for recent erase operation
@@ -1744,3 +1750,55 @@ void plat_sel_ts_recent_add(time_stamp_t *ts)
 //     entry.msg[14] = 0x01;                      // offset
 //     (plat_sel_add_entry(&entry, &rec_id));
 // }
+
+
+void ipmi_find_sel_desc(uint8_t *offset, uint8_t *data,uint8_t se_type, const char *ev_desc ,uint8_t ev_type )
+{
+    struct ipmi_event_sensor_types *evt = NULL;
+
+    for (evt = ipmi_get_first_event_sensor_type(se_type, ev_type); evt; evt = ipmi_get_next_event_sensor_type(evt))
+    {
+        if (!strcmp(evt->desc , ev_desc))
+        {
+          *offset = evt->offset;
+          *data = evt->data;
+        return;
+        }
+    }
+   
+}
+
+void plat_sel_generater_add_entry(const char *ev_desc,uint8_t ev_type)
+{
+
+    printf("plat_sel_generater_add_entry\n");
+    int rec_id;
+    unsigned char ts_array[4];
+    sel_msg_t entry;
+
+    uint8_t se_type = 0x08;
+    uint8_t offset = 0x04;
+    uint8_t data = 0xff;
+
+    ipmi_find_sel_desc(&offset,&data,se_type,ev_desc,ev_type);
+    
+    (time_stamp_fill(ts_array));
+    memset(&entry, 0, sizeof(sel_msg_t));
+
+    entry.msg[0] = 0x00;
+    entry.msg[1] = 0x00;
+    entry.msg[2] = 0x02;
+    entry.msg[3] = ts_array[3];
+    entry.msg[4] = ts_array[2];
+    entry.msg[5] = ts_array[1];
+    entry.msg[6] = ts_array[0];
+    entry.msg[7] = 0x20;
+    entry.msg[8] = 0;
+    entry.msg[9] = 0x04;
+    entry.msg[10] = se_type;                   // sensor type 
+    entry.msg[11] = 0x20;                      // sensor num
+    entry.msg[12] = ev_type;                   // event type
+    entry.msg[13] = offset;                    // offset
+    entry.msg[14] = data;                      // data
+    (plat_sel_add_entry(&entry, &rec_id));
+}

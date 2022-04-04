@@ -1,6 +1,6 @@
 #pragma once
 #include <vector>
-
+#include "ipmi/sel.hpp"
 
 #define MAX_IPMI_MSG_SIZE 100
 // #define BOOST_LOG_DYN_LINK
@@ -16,3 +16,5 @@ void *timer_handler(void);
 // void *ssdp_handler(void *data);
 void*
 ipmb_rx_handler(void *bus_num);
+
+void sel_generater(void);
