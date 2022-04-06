@@ -309,7 +309,7 @@ void front_LED_blink(int id_interval)
 }
 /**
  * @brief 주기적인 업데이트가 필요한 리소스들을 위한 핸들러
- * @bug redfish 업데이트/sensor관련 이 필요함 update_hw_status 구현 필요 !!
+ * @bug redfish 업데이트/sensor관련 이 필요함 update_hw_status 구현 필요 PowerCapacityWatts  PowerConsumedWatts와같은
  */
 void *timer_handler(void)
 {
@@ -321,7 +321,7 @@ void *timer_handler(void)
                 {
                         return;
                 }
-                if(count==10)
+                if(count==3)
                 {       
                         for(int i=0; i<4;i++)
                         {

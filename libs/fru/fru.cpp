@@ -943,16 +943,16 @@ void plat_fru_device_save(){
 	fwrite(&fru_this->fru_chassis, sizeof(fru_chassis_info_t), SENSOR_FRU_MAX, fru_fp);
 	fclose(fru_fp);
 
-	sprintf(save, "cp %s /backup_conf/ipmi/", IPMI_FRU_HEADER_PATH);
+	sprintf(save, "cp %s /conf/backup/ipmi/", IPMI_FRU_HEADER_PATH);
 	system(save);
 	memset(save, 0, sizeof(unsigned char) * 500);
-	sprintf(save, "cp %s /backup_conf/ipmi/", IPMI_FRU_BOARD_PATH);
+	sprintf(save, "cp %s /conf/backup/ipmi/", IPMI_FRU_BOARD_PATH);
 	system(save);
 	memset(save, 0, sizeof(unsigned char) * 500);
-	sprintf(save, "cp %s /backup_conf/ipmi/", IPMI_FRU_PRODUCT_PATH);
+	sprintf(save, "cp %s /conf/backup/ipmi/", IPMI_FRU_PRODUCT_PATH);
 	system(save);
 	memset(save, 0, sizeof(unsigned char) * 500);
-	sprintf(save, "cp %s /backup_conf/ipmi/", IPMI_FRU_CHASSIS_PATH);
+	sprintf(save, "cp %s /conf/backup/ipmi/", IPMI_FRU_CHASSIS_PATH);
 	system(save);
 	memset(save, 0, sizeof(unsigned char) * 500);
 }

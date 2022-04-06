@@ -1,6 +1,7 @@
 #ifndef __LIGHTNING_SENSOR_H__
 #define __LIGHTNING_SENSOR_H__
 
+#include "ipmi/common.hpp"
 #include <ipmi/sensor_define.hpp>
 #include <ipmi/ipmb.hpp>
 #include <ipmi/ipmi.hpp> // sdr structure + ipmi command
@@ -21,6 +22,7 @@
  
  #define I2C_DEV_PEB       "/dev/i2c-4"
  #define I2C_DEV_PDPB      "/dev/i2c-6"
+ #define I2C_DEV_TEM      "/dev/i2c-6" //임시
  #define I2C_DEV_FCB       "/dev/i2c-5"
  #define I2C_DEV_NVA       "/dev/i2c-4"
  #define I2C_PSU_DEV_NVA       "/dev/i2c-7"
@@ -29,6 +31,8 @@
  #define I2C_BUS_PDPB_DIR "/root/sys/class/i2c-adapter/i2c-6/"//"/sys/class/i2c-adapter/i2c-6/"
  #define I2C_BUS_FCB_DIR "/sys/class/i2c-adapter/i2c-5/"
  
+
+
  #define I2C_ADDR_PEB_HSC 0x11
  
  #define I2C_ADDR_PDPB_ADC  0x48
@@ -36,22 +40,22 @@
  #define I2C_ADDR_FCB_HSC  0x22
  #define I2C_ADDR_NCT7904  0x2d
  
- //#define ADC_DIR "/sys/devices/platform/ast_adc.0"
- #define ADC_DIR "/root/sys/devices/platform/ast_adc.0/"//"/sys/devices/platform/ast-adc.0"
- #define ADC_VALUE "adc%d_value"
- #define TACHO_DIR "/root/sys/devices/platform/ast_pwm_tacho.0"//"/sys/devices/platform/ast_pwm_tacho.0"
- #define TACHO_VALUE "tacho%d_rpm"
+ //#define ADC_DIR "/root/sys/devices/platform/ast_adc.0/"//"/sys/devices/platform/ast-adc.0"
+ #define ADC_DIR "/sys/devices/platform/ahb/ahb:apb/1e6e9000.adc/driver/1e6e9000.adc/iio:device0"
+  #define ADC_DIR1 "/sys/devices/platform/ahb/ahb:apb/1e6e9000.adc/driver/1e6e9100.adc/iio:device1"
+ #define ADC_VALUE "in_voltage%d_raw"
+ //tacho는 현재 ast2600a3 보드에 있지않음으로 읽히지 않음
+ //#define TACHO_DIR "/root/sys/devices/platform/ast_pwm_tacho.0"//"/sys/devices/platform/ast_pwm_tacho.0"
+ #define TACHO_DIR "/sys/devices/platform/ahb/ahb:apb/1e610000.pwm-tacho-controller/hwmon/hwmon0"
+ #define TACHO_VALUE "pwm%d"
+
  
  #define UNIT_DIV 1000
- 
  #define TPM75_TEMP_RESOLUTION 0.0625
- 
  #define ADS1015_DEFAULT_CONFIG 0xe383
- 
  #define MAX_SENSOR_NUM 0xFF
  #define ALL_BYTES 0xFF
  #define LAST_REC_ID 0xFFFF
- 
  #define PEB_TMP75_U136_DEVICE I2C_BUS_PEB_DIR "4-004d"
  #define PEB_TMP75_U134_DEVICE I2C_BUS_PEB_DIR "4-004a"
  
@@ -61,7 +65,6 @@
  #define PDPB_TMP75_U51_DEVICE I2C_BUS_PDPB_DIR "6-004c"
  #define PDPB_TMP75_U52_DEVICE I2C_BUS_PDPB_DIR "6-004d"
  #define PDPB_TMP75_U53_DEVICE I2C_BUS_PDPB_DIR "6-004e"
-
  #define PDPB_TMP75_PSU1_DEVICE I2C_BUS_PDPB_DIR "6-004f"
  #define PDPB_TMP75_PSU2_DEVICE I2C_BUS_PDPB_DIR "6-0050"
  
@@ -150,6 +153,17 @@ enum tmp75_pdpb_sensors {
     PDPB_TMP75_U73 = 0x48,
     PDPB_TMP75_U69 = 0x4E,// check duplicate address
     PDPB_TMP75_U205 = 0x4C,
+};
+/**
+ * @brief KTNF AST2600a3 타겟보드의 LM75 센서값
+ * 
+ */
+enum tmp75_pdpb_KTNF_sensors{
+    PDPB_REAR_RIGHT =0x4e,
+    PDPB_CPU_AMBIENT =0x4f,
+    PDPB_FRONT_RIGHT =0X49,
+    PDPB_PCIE_AMBIENT = 0X4A,
+    PDPB_FRONT_LEFT = 0X48,
 };
 
 enum adc_pins {

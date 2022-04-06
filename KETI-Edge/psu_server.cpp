@@ -283,10 +283,6 @@ void DoStuff(void) {
       FRU_NVA, NVA_SENSOR_PSU1_WATT,
       &power_watt[0]); // sdr_sensor_read(NVA_SENSOR_PSU1_TEMP);
   lightning_sensor_read(FRU_NVA, NVA_SENSOR_PSU2_WATT, &power_watt[1]);
-  // cout<<"psu DoStuff power_watt[0]..!"<<power_watt[0]<<endl;
-  // cout<<"psu DoStuff power_watt[1]..!"<<power_watt[1]<<endl;
-  // power_watt[0]=sdr_sensor_read(NVA_SENSOR_PSU1_WATT);
-  // power_watt[1]=sdr_sensor_read(NVA_SENSOR_PSU2_WATT);
   if (bPowerGD == 0) {
     if (power_watt[0] == 13)
       power_watt[0] = 0;
@@ -358,7 +354,6 @@ void DoStuff(void) {
       if (v_count < LAST_HOUR_COUNT_DB)
         sprintf(query, "INSERT INTO last_hour_1 (watt, dt) values(%d, \"%s\");",
                 power_watt[0] * 10, time_string);
-
       else if (v_count >= LAST_HOUR_COUNT_DB) {
 
         sprintf(query, "UPDATE last_hour_1 SET watt=%d, dt=\"%s\" WHERE ID=%d;",

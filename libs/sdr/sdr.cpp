@@ -344,7 +344,12 @@ void storage_clear_sdr_repository(ipmi_res_t *response, uint8_t *res_len)
 
     *res_len = data - &response->data[0];
 }
-
+/**
+ * @brief Sensor정보 업데이트 
+ * @details AST2600A3 KTNF 기반 포팅(ADC reading 값 문제 해결중 )
+ * @author 기철
+ * 
+ */
 void update_sensor_reading()
 {
     int ret, rVal;
@@ -353,7 +358,7 @@ void update_sensor_reading()
     for (auto iter = sdr_rec.begin(); iter != sdr_rec.end(); iter++)
     {
         p_sdr = iter->second.find(iter->first)->second.sdr_get_entry();
-        
+    
         lightning_sensor_read(p_sdr->oem, p_sdr->sensor_num, &rVal);
 
         p_sdr->nominal = rVal;
@@ -363,11 +368,13 @@ void update_sensor_reading()
             if (p_sdr->nominal == g_Tmax || p_sdr->nominal == 0)
             {
                 p_sdr->analog_flags = PSDR_ANALOG_DISABLE;
+                log(info)<<"CPU0 Flag On";
                 cpu0_flag = 1;
             }
             else
             {
                 cpu0_flag = 0;
+                log(info)<<"CPU0 Flag OFF";
                 p_sdr->analog_flags = 0;
             }
         }
@@ -376,11 +383,13 @@ void update_sensor_reading()
             if (p_sdr->nominal == g_Tmax || p_sdr->nominal == 0)
             {
                 p_sdr->analog_flags = PSDR_ANALOG_DISABLE;
+                log(info)<<"CPU1 Flag On";
                 cpu1_flag = 1;
             }
             else
             {
                 cpu1_flag = 0;
+                log(info)<<"CPU2 Flag OFF";
                 p_sdr->analog_flags = 0;
             }
         }
@@ -441,28 +450,29 @@ void update_sensor_reading()
     {
         p_sdr = iter->second.begin()->second.sdr_get_entry();
         
-        if (cpu0_flag == 1)
-        {
-            if (p_sdr->sensor_num == PEB_SENSOR_ADC_P1V7_CPU0)
-                p_sdr->analog_flags = PSDR_ANALOG_DISABLE;
-            if (p_sdr->sensor_num == PEB_SENSOR_ADC_P1V2_ABC)
-                p_sdr->analog_flags = PSDR_ANALOG_DISABLE;
-            if (p_sdr->sensor_num == PEB_SENSOR_ADC_P1V2_DEF)
-                p_sdr->analog_flags = PSDR_ANALOG_DISABLE;
-            if (p_sdr->sensor_num == PEB_SENSOR_ADC_P1V0_CPU0)
-                p_sdr->analog_flags = PSDR_ANALOG_DISABLE;
-        }
-        if (cpu1_flag == 1)
-        {
-            if (p_sdr->sensor_num == PEB_SENSOR_ADC_P1V7_CPU1)
-                p_sdr->analog_flags = PSDR_ANALOG_DISABLE;
-            if (p_sdr->sensor_num == PEB_SENSOR_ADC_P1V2_GHJ)
-                p_sdr->analog_flags = PSDR_ANALOG_DISABLE;
-            if (p_sdr->sensor_num == PEB_SENSOR_ADC_P1V2_KLM)
-                p_sdr->analog_flags = PSDR_ANALOG_DISABLE;
-            if (p_sdr->sensor_num == PEB_SENSOR_ADC_P1V0_CPU1)
-                p_sdr->analog_flags = PSDR_ANALOG_DISABLE;
-        }
+        // AST2600A3 포팅 적용해야함 전부 바뀜 
+        // if (cpu0_flag == 1)
+        // {
+        //     if (p_sdr->sensor_num == PEB_SENSOR_ADC_P1V05)
+        //         p_sdr->analog_flags = PSDR_ANALOG_DISABLE;
+        //     if (p_sdr->sensor_num == PEB_SENSOR_ADC_P1V2_VDDQ)
+        //         p_sdr->analog_flags = PSDR_ANALOG_DISABLE;
+        //     if (p_sdr->sensor_num == PEB_SENSOR_ADC_P1V2_DEF)
+        //         p_sdr->analog_flags = PSDR_ANALOG_DISABLE;
+        //     if (p_sdr->sensor_num == PEB_SENSOR_ADC_P1V0_CPU0)
+        //         p_sdr->analog_flags = PSDR_ANALOG_DISABLE;
+        // }
+        // if (cpu1_flag == 1)
+        // {
+        //     if (p_sdr->sensor_num == PEB_SENSOR_ADC_P1V7_CPU1)
+        //         p_sdr->analog_flags = PSDR_ANALOG_DISABLE;
+        //     if (p_sdr->sensor_num == PEB_SENSOR_ADC_P1V2_GHJ)
+        //         p_sdr->analog_flags = PSDR_ANALOG_DISABLE;
+        //     if (p_sdr->sensor_num == PEB_SENSOR_ADC_P1V2_KLM)
+        //         p_sdr->analog_flags = PSDR_ANALOG_DISABLE;
+        //     if (p_sdr->sensor_num == PEB_SENSOR_ADC_P1V0_CPU1)
+        //         p_sdr->analog_flags = PSDR_ANALOG_DISABLE;
+        // }
         
     }
      
@@ -486,7 +496,7 @@ void sensor_get_reading(ipmi_req_t *request, ipmi_res_t *response, uint8_t *res_
     std::map<uint8_t, Ipmisdr>::iterator ptr;
     int val = 0;
 
-    lightning_sensor_read(FRU_PEB, PEB_SENSOR_ADC_P12V, &val);
+    lightning_sensor_read(FRU_PEB, PEB_SENSOR_ADC_P12V_PSU1, &val);
     
     if (val >= 150)
     {
@@ -659,7 +669,12 @@ void storage_get_sdr_info(ipmi_res_t *response, uint8_t *res_len)
 
 
 
-
+/**
+ * @brief KETI-WEB에 전송하는 API 리스트 
+ * 
+ * @param res 
+ * @return int 
+ */
 int rest_get_sensor_config(char *res)
 {
     json::value obj = json::value::object();
@@ -678,21 +693,22 @@ int rest_get_sensor_config(char *res)
             SENSOR["NAME"] = json::value::string(U(p_sdr->str));
             switch (p_sdr->sensor_num)
             {
-            case PEB_SENSOR_ADC_P12V:
-            case PEB_SENSOR_ADC_P3V3_AUX:
-            case PEB_SENSOR_ADC_P1V0_STBY:
-            case PEB_SENSOR_ADC_P1V05_PCH_AUX:
-            case PEB_SENSOR_ADC_P12V_AUX:
-            case PEB_SENSOR_ADC_P1V8_PCH_AUX:
-            case PEB_SENSOR_ADC_P3V0_BAT:
-            case PEB_SENSOR_ADC_P1V7_CPU0:
-            case PEB_SENSOR_ADC_P1V7_CPU1:
-            case PEB_SENSOR_ADC_P1V2_ABC:
-            case PEB_SENSOR_ADC_P1V2_DEF:
-            case PEB_SENSOR_ADC_P1V2_GHJ:
-            case PEB_SENSOR_ADC_P1V2_KLM:
-            case PEB_SENSOR_ADC_P1V0_CPU0:
-            case PEB_SENSOR_ADC_P1V0_CPU1:
+            case PEB_SENSOR_ADC_P12V_PSU1:
+            case PEB_SENSOR_ADC_P12V_PSU2:
+            case PEB_SENSOR_ADC_P3V3:
+            case PEB_SENSOR_ADC_P5V:
+            case PEB_SENSOR_ADC_PVNN_PCH:
+            case PEB_SENSOR_ADC_P1V05:
+            case PEB_SENSOR_ADC_P1V8:
+            case PEB_SENSOR_ADC_BAT:
+            case PEB_SENSOR_ADC_PVCCIN:
+            case PEB_SENSOR_ADC_PVNN_PCH_CPU0:
+            case PEB_SENSOR_ADC_P1V8_NACDELAY:
+            case PEB_SENSOR_ADC_P1V2_VDDQ:
+            case PEB_SENSOR_ADC_PVNN_NAC:
+            case PEB_SENSOR_ADC_P1V05_NAC:
+            case PEB_SENSOR_ADC_PVPP:
+            case PEB_SENSOR_ADC_PVTT:
             case NVA_SENSOR_PSU1_TEMP:
             case NVA_SENSOR_PSU2_TEMP:
             case NVA_SENSOR_PSU1_WATT:
@@ -702,7 +718,6 @@ int rest_get_sensor_config(char *res)
             case NVA_SENSOR_BP_FAN3:
             case NVA_SENSOR_BP_FAN4:
             case NVA_SENSOR_BP_FAN5:
-            case NVA_SENSOR_BP_FAN6:
             case NVA_SENSOR_PSU1_FAN1:
             case NVA_SENSOR_PSU2_FAN1:
             case PDPB_SENSOR_TEMP_CPU0:
@@ -731,11 +746,11 @@ int rest_get_sensor_config(char *res)
             case PDPB_SENSOR_TEMP_CPU1_CH3_DIMM0:
             case PDPB_SENSOR_TEMP_CPU1_CH3_DIMM1:
             case PDPB_SENSOR_TEMP_CPU1_CH3_DIMM2:
-            case PDPB_SENSOR_TEMP_CPU1_FRONT:
-            case PDPB_SENSOR_TEMP_LEFT_REAR:
-            case PDPB_SENSOR_TEMP_NEAR_BMC:
-            case PDPB_SENSOR_TEMP_NEAR_CPU0:
-            case PDPB_SENSOR_TEMP_RIGHT_REAR:
+            case PDPB_SENSOR_TEMP_REAR_RIGHT:
+            case PDPB_SENSOR_TEMP_CPU_AMBIENT:
+            case PDPB_SENSOR_TEMP_FRONT_RIGHT:
+            case PDPB_SENSOR_TEMP_PCIE_AMBIENT:
+            case PDPB_SENSOR_TEMP_FRONT_LEFT:
                 SENSOR["READING"] = json::value::string(to_string(sdr_convert_raw_to_sensor_value(p_sdr, p_sdr->nominal)));
                 SENSOR["RB"] = json::value::string(to_string(sdr_convert_raw_to_sensor_value(p_sdr, p_sdr->rb_exp)));
                 temp = (p_sdr->lnc_thresh != THRESH_NOT_AVAILABLE ? sdr_convert_raw_to_sensor_value(p_sdr, p_sdr->lnc_thresh) : 0);
@@ -1073,9 +1088,9 @@ string sensor_tpye2string(uint8_t ipmisensor_type)
 {
     if (ipmisensor_type <= PDPB_SENSOR_TEMP_CPU1_CH3_DIMM2)
         return "Temperature";
-    else if (ipmisensor_type >= PEB_SENSOR_ADC_P12V && ipmisensor_type <= PEB_SENSOR_ADC_P1V0_CPU1)
+    else if (ipmisensor_type >= PEB_SENSOR_ADC_P12V_PSU1 && ipmisensor_type <= PEB_SENSOR_ADC_PVTT)
         return "Voltage";
-    else if (ipmisensor_type >= PDPB_SENSOR_P12V && ipmisensor_type <= PDPB_SENSOR_TEMP_CPU1_FRONT2)
+    else if (ipmisensor_type >= PDPB_SENSOR_TEMP_REAR_RIGHT && ipmisensor_type <= PDPB_SENSOR_TEMP_FRONT_LEFT)
         return "Temperature";
     else if (ipmisensor_type >= NVA_SENSOR_TEMP1 && ipmisensor_type <= NVA_SENSOR_PSU2_TEMP)
         return "Temperature";
@@ -1085,7 +1100,7 @@ string sensor_tpye2string(uint8_t ipmisensor_type)
         return "Power";
     else if (ipmisensor_type >= NVA_SENSOR_PSU1_TEMP2 && ipmisensor_type <= NVA_SENSOR_PSU2_TEMP2)
         return "Temperature";
-    else if (ipmisensor_type >= NVA_SENSOR_BP_FAN1 && ipmisensor_type <= NVA_SENSOR_BP_FAN6)
+    else if (ipmisensor_type >= NVA_SENSOR_BP_FAN1 && ipmisensor_type <= NVA_SENSOR_BP_FAN5)
         return "AirFlow";
 }
 /**
@@ -1103,6 +1118,7 @@ bool redfish_seonsor_sync(sensor_thresh_t *rec)
     // printf("==== redfish_seonsor_sync sensor_name : %s ====\n", rec->str);
     // printf("\t redfish_seonsor_sync sensor num : %d\n", rec->sensor_type);
     double reading, lnr, lc, lnc, unr, uc, unc;
+   
     reading = sdr_convert_raw_to_sensor_value((rec), rec->nominal);
     lnr = sdr_convert_raw_to_sensor_value((rec), rec->lnr_thresh);
     lc = sdr_convert_raw_to_sensor_value((rec), rec->lc_thresh);
@@ -1119,7 +1135,6 @@ bool redfish_seonsor_sync(sensor_thresh_t *rec)
     se.thresh.upper_caution.reading=unc;
     se.thresh.upper_fatal.reading=unr;
     se.thresh.lower_fatal.reading=lnr;
-
     uint16_t flag;
     flag |= 0x1; // reading_units
     // flag|=0x40; //sensing_interval

@@ -5,7 +5,7 @@
 #include <sqlite3.h>
 extern unordered_map<string, Resource *> g_record;
 #pragma once
-extern  sensor_thresh_t peb_sensors[15];
+extern  sensor_thresh_t peb_sensors[16];
 extern  sensor_thresh_t nva_sensors[12];
 extern  sensor_thresh_t pdpb_sensors[31];
 
@@ -2300,7 +2300,6 @@ void get_fans(json::value &JFANS)
 	fan[2] = sdr_sensor_read(NVA_SENSOR_BP_FAN3) * 100;
 	fan[3] = sdr_sensor_read(NVA_SENSOR_BP_FAN4) * 100;
 	fan[4] = sdr_sensor_read(NVA_SENSOR_BP_FAN5) * 100;
-	fan[5] = sdr_sensor_read(NVA_SENSOR_BP_FAN6) * 100;
 
 	for (int i = 1; i <= 6; i++)
 	{
@@ -2313,14 +2312,16 @@ void get_fans(json::value &JFANS)
 
 	return;
 }
-
+/**
+* @brief 보드 온도 측정
+* @details PDPB_SENSOR_TEMP_LEFT_REAR에서 PDPB_SENSOR_TEMP_REAR_RIGHT로 변경
+* @author 기철
+**/
 void get_temp_board(json::value &JBOARD_TEMP)
 {
 	float board_val = 0;
-
-	board_val = sdr_sensor_read(PDPB_SENSOR_TEMP_LEFT_REAR) * 0.5;
+	board_val = sdr_sensor_read(PDPB_SENSOR_TEMP_REAR_RIGHT) * 0.5;
 	JBOARD_TEMP["VALUE"] = json::value::string(to_string(board_val));
-
 	return;
 }
 /**
@@ -2450,7 +2451,7 @@ void get_health_summary(json::value &jhealth_summary)
 			JVCPU.push_back(json::value::number(0));
 	}
 
-	for (snr_id = NVA_SENSOR_BP_FAN1; snr_id <= NVA_SENSOR_BP_FAN6; snr_id++)
+	for (snr_id = NVA_SENSOR_BP_FAN1; snr_id <= NVA_SENSOR_BP_FAN5; snr_id++)
 	{
 		sensor_index = plat_find_sdr_index(snr_id);
 		temp = sdr_rec[sensor_index].find(sensor_index)->second.get_sensor_thresh_t();

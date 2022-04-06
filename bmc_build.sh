@@ -27,19 +27,13 @@ cmake CMakeLists.txt
 make -j 30
 cd ../
 
-#echo "psu build .."
-#cd psu_server
-#cmake CMakeLists.txt
-#make -j 30
-#cd ../
-
-
 echo " overlay copy ..."
-cp $edge ../target_sys/firmware/
-cp $rest ../target_sys/firmware/
-cp $kvm ../target_sys/firmware/
+cp ./output/bin/* ../target_sys/firmware/
+#cp ./output/bin/KETI-Edge ../target_sys/firmware/
+#cp ./output/bin/KETI-REST ../target_sys/firmware/
+#cp $kvm ../target_sys/firmware/
 #cp $psu ../overlay/usr/sbin/
 
 echo "scp ..."
 
-sshpass -p $password scp $edge $rest $kvm $smltr $id@$ip:$path
+#sshpass -p $password scp $edge $rest $kvm $smltr $id@$ip:$path
