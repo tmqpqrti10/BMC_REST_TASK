@@ -107,13 +107,12 @@ int set_pef_enable(unsigned char recid, unsigned char enable){
 	uint8_t zero = 0;
 	g_eft_data[recid].config = zero;
 	if(enable == 0){	// disable
-		g_eft_data[recid].config &= PEF_CONFIG_ENABLED;
+		g_eft_data[recid].config = PEF_FILTER_DISABLED;
 	}
 	else{ // enable
-		g_eft_data[recid].config |= PEF_CONFIG_ENABLED;
+		g_eft_data[recid].config = PEF_FILTER_ENABLED;
 	}
-
-	if(set_eft_entry(recid, &(g_eft_data[recid])) < 0){
+	if(set_eft_entry(recid, &(g_eft_data[recid].config)) < 0){
 		return -1;
 	}
 	return 0;
@@ -228,9 +227,9 @@ int set_pef_ctrl_to_file(unsigned char *data){
 	//success
 	fclose(fp);
 
-	char save[500] = {0,};
-	sprintf(save, "cp %s /backup_conf/ipmi/", EVENT_FILTER_TABLE_FILE);
-	system(save);
+	// char save[500] = {0,};
+	// sprintf(save, "cp %s /backup_conf/ipmi/", EVENT_FILTER_TABLE_FILE);
+	// system(save);
 
 	return 0;
 }
@@ -322,9 +321,9 @@ int set_pef_act_glb_ctrl_to_file(unsigned char *data){
 	//success
 	fclose(fp);
 
-	char save[500] = {0,};
-	sprintf(save, "cp %s /backup_conf/ipmi/", EVENT_FILTER_TABLE_FILE);
-	system(save);
+	// char save[500] = {0,};
+	// sprintf(save, "cp %s /backup_conf/ipmi/", EVENT_FILTER_TABLE_FILE);
+	// system(save);
 
 	return 0;
 }
@@ -405,9 +404,9 @@ int set_eft_entry_num_to_file(unsigned char *size){
 	//success
 	fclose(fp);
 
-	char save[500] = {0,};
-	sprintf(save, "cp %s /backup_conf/ipmi/", EVENT_FILTER_TABLE_FILE);
-	system(save);
+	// char save[500] = {0,};
+	// sprintf(save, "cp %s /backup_conf/ipmi/", EVENT_FILTER_TABLE_FILE);
+	// system(save);
 
 	return 0;
 }
@@ -701,9 +700,9 @@ int set_eft_entry_to_file(unsigned char *size, void *entry){
 	//success
 	fclose(fp);
 
-	char save[500] = {0,};
-	sprintf(save, "cp %s /backup_conf/ipmi/", EVENT_FILTER_TABLE_FILE);
-	system(save);
+	// char save[500] = {0,};
+	// sprintf(save, "cp %s /backup_conf/ipmi/", EVENT_FILTER_TABLE_FILE);
+	// system(save);
 
 	return 0;
 }
@@ -989,8 +988,8 @@ pef_set_config_param (ipmi_req_t *request,
 			break;
 		case 7:
 			id = req->data[1];
-			entry = &req->data[2];
-			if(set_pef_cfg(id, (struct pef_policy_entry*)entry) < 0){
+			entry = req->data[2];
+			if(set_pef_enable(id,entry) < 0){
 				res->cc = CC_UNSPECIFIED_ERROR;
 				return;
 			}
