@@ -20,6 +20,7 @@
 unsigned int f_fan_error;
 #define ETH_COUNT 4
 
+
 extern Ipminetwork ipmiNetwork[ETH_COUNT];
 extern Dcmiconfiguration dcmiConfiguration;
 extern std::map<uint8_t, std::map<uint8_t, Ipmisdr>> sdr_rec;
