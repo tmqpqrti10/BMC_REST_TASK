@@ -124,11 +124,7 @@ int main(void)
 	t_ssdp.join();
 	t_timer.join();
 	t_psuserver.join();
-	// t_chassis_monitor.join();
-	// t_systems_monitor.join();
-	// t_account_monitor.join();
-	// t_manager_monitor.join();
-	// t_sessions_monitor.join();
+
 
 	t_sel_generate.join();
 	

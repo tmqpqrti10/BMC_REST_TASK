@@ -149,17 +149,17 @@
 #define PDPB_MB_LCR_THRESHOLD 0x2
 #define PDPB_MB_LNR_THRESHOLD 0x0
 
-#define PEB_SENSOR_COUNT 15
+#define PEB_SENSOR_COUNT 16
 #define PDPB_SENSOR_COUNT 31
-#define NVA_SENSOR_COUNT 12
+#define NVA_SENSOR_COUNT 11
 
 extern const float m_val_vol[PEB_SENSOR_COUNT];
 extern const float input_volt[PEB_SENSOR_COUNT];
 extern const float nomi[PEB_SENSOR_COUNT];
 extern const float volt[PEB_SENSOR_COUNT];
-extern  sensor_thresh_t peb_sensors[16];
-extern  sensor_thresh_t nva_sensors[12];
-extern  sensor_thresh_t pdpb_sensors[31];
+extern  sensor_thresh_t peb_sensors[PEB_SENSOR_COUNT];
+extern  sensor_thresh_t nva_sensors[NVA_SENSOR_COUNT];
+extern  sensor_thresh_t pdpb_sensors[PDPB_SENSOR_COUNT];
 // sensor_thresh_t fru_sensors[1] = {
 //     BMC_SLAVE_ADDR,0x00,0x00,0x0A,0x00,0x7F,0x02,SENSOR_TYPE_FRU,SENSOR_EVENT_READING_THRESHOLD,
 //     {SENSOR_EVzENT_ASSERTION_LS, SENSOR_EVENT_ASSERTION_MS},

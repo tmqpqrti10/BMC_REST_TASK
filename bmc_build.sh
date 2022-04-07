@@ -1,6 +1,6 @@
 #!/bin/sh
 
-ip=10.0.6.104
+ip=10.0.6.109
 id=root
 password=ketilinux
 path=/usr/sbin
@@ -22,18 +22,13 @@ make -j 30
 #make
 #cd ../
 
-cd smltr
-cmake CMakeLists.txt
-make -j 30
-cd ../
-
 echo " overlay copy ..."
-cp ./output/bin/* ../target_sys/firmware/
-#cp ./output/bin/KETI-Edge ../target_sys/firmware/
-#cp ./output/bin/KETI-REST ../target_sys/firmware/
+#cp ./output/bin/* ../target_sys/firmware/
+cp $edge ../target_sys/firmware/
+cp $rest ../target_sys/firmware/
 #cp $kvm ../target_sys/firmware/
 #cp $psu ../overlay/usr/sbin/
 
 echo "scp ..."
 
-#sshpass -p $password scp $edge $rest $kvm $smltr $id@$ip:$path
+sshpass -p $password scp $edge $rest $kvm $smltr $id@$ip:$path

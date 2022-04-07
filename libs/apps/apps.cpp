@@ -5,9 +5,9 @@
 #include <sqlite3.h>
 extern unordered_map<string, Resource *> g_record;
 #pragma once
-extern  sensor_thresh_t peb_sensors[16];
-extern  sensor_thresh_t nva_sensors[12];
-extern  sensor_thresh_t pdpb_sensors[31];
+extern  sensor_thresh_t peb_sensors[PEB_SENSOR_COUNT];
+extern  sensor_thresh_t nva_sensors[NVA_SENSOR_COUNT];
+extern  sensor_thresh_t pdpb_sensors[PDPB_SENSOR_COUNT];
 
 /**
  *

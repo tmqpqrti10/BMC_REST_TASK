@@ -204,9 +204,21 @@ void init_system(Systems *system, string _id)
         system->ethernet->name = "Computer System Ethernet Interface Collection";
     
         int eth_num = improved_stoi(get_popen_string("ifconfig -a | grep eth | wc -l"));
-        for (int i = 0; i < eth_num; i++){
-            init_ethernet(system->ethernet, to_string(i));
+        try
+        {
+            log(info) << "eth_num ="<<eth_num;
+            for (int i = 0; i < eth_num; i++){
+                log(info) << "eth"<<i;
+                init_ethernet(system->ethernet, to_string(i));
+                
+            }
+            
         }
+        catch (const std::exception&)
+        {
+            log(info) << "[...]System ethernet init error";
+        }
+        
     }
 
     if (!record_is_exist(odata_id + "/LogServices")){

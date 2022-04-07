@@ -677,7 +677,8 @@ static int read_ads1015_value(uint8_t channel, char *device, uint8_t addr,
   return 0;
 }
 /**
- *@brief ADC 데이터를 읽는 곳 가상시뮬레이터는 0~9까지 생성함
+ *@brief FAN ADC 데이터를 읽는 곳 
+ *@bug KTNF-AST2600a3보드에선 0~5개까지 존재함
  */
 int read_fan_value(int fanno, int *value) {
   int ret;
@@ -1156,8 +1157,6 @@ int lightning_sensor_read(uint8_t fru, uint8_t sensor_num, int *value) {
     case NVA_SENSOR_PSU1_FAN1:
       cout << ("lightning_sensor_read: %s %02X %02X", I2C_PSU_DEV_NVA,
                NVA_PSU_1, NVA_PSU_FAN1);
-      *value = tacho_data[6]; /// 100;//ret = read_psu_value(I2C_PSU_DEV_NVA,
-                              /// NVA_PSU_1, NVA_PSU_FAN1, (int*) value);
       break;
 
     case NVA_SENSOR_PSU2_FAN1:

@@ -5,7 +5,7 @@ const float input_volt[]={1.348, 1.355, 1.0, 1.05, 1.348, 1.35, 0.998, 1.276, 1.
 const float nomi[]={1.843, 1.69, 0.929, 1.347, 1.724, 1.69, 1.69, 1.69, 1.69, 1.2, 1.2, 1.2, 1.2, 0.929, 0.929};
 const float volt[]={12.0, 3.3,1.0,1.05,12.0,1.8, 3.0, 1.7, 1.7, 1.2, 1.2, 1.2, 1.2, 1.0, 1.0};
 
-sensor_thresh_t peb_sensors[16] = {
+sensor_thresh_t peb_sensors[PEB_SENSOR_COUNT] = {
     {BMC_SLAVE_ADDR, 0x00, PEB_SENSOR_NUM_BASE, 0x07, 0x0d, 0x7F, 0x68, SENSOR_TYPE_VOLTAGE, SENSOR_EVENT_READING_THRESHOLD,
     {SENSOR_EVENT_ASSERTION_LS, SENSOR_EVENT_ASSERTION_MS},
     {SENSOR_EVENT_ASSERTION_LS, SENSOR_EVENT_ASSERTION_MS},
@@ -153,7 +153,7 @@ sensor_thresh_t peb_sensors[16] = {
  
 };
 
-sensor_thresh_t nva_sensors[12] = {
+sensor_thresh_t nva_sensors[NVA_SENSOR_COUNT] = {
     {BMC_SLAVE_ADDR, 0x00, NVA_SENSOR_PSU1_TEMP, 0xA, 0x0, 0x7F, 0x64, SENSOR_TYPE_TEMPERATURE, SENSOR_EVENT_READING_THRESHOLD,
     {SENSOR_EVENT_ASSERTION_LS, SENSOR_EVENT_ASSERTION_MS},
     {SENSOR_EVENT_ASSERTION_LS, SENSOR_EVENT_ASSERTION_MS},
@@ -264,7 +264,7 @@ sensor_thresh_t nva_sensors[12] = {
     // 0x00, 0x00, FRU_NVA, 0xCB, "SYSTEM_FAN6"}
 };
 
-sensor_thresh_t pdpb_sensors[31] = {
+sensor_thresh_t pdpb_sensors[PDPB_SENSOR_COUNT] = {
     {BMC_SLAVE_ADDR, 0x00, PDPB_SENSOR_TEMP_REAR_RIGHT, 0x0A, 0x00, 0x7F, 0x64, SENSOR_TYPE_TEMPERATURE, SENSOR_EVENT_READING_THRESHOLD,
     {SENSOR_EVENT_ASSERTION_LS, SENSOR_EVENT_ASSERTION_MS},
     {SENSOR_EVENT_ASSERTION_LS, SENSOR_EVENT_ASSERTION_MS},
