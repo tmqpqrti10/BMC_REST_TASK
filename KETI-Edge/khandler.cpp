@@ -17,11 +17,9 @@
 #include <ipmi/gpio.hpp>
 #include <ipmi/lightning_sensor.hpp>
 #include <ipmi/sdr.hpp>
-// #include"rest_handler.hpp"
 unsigned int f_fan_error;
-// unique_ptr<RHandler> g_restlistener;
 #define ETH_COUNT 4
-// ipmi
+
 extern Ipminetwork ipmiNetwork[ETH_COUNT];
 extern Dcmiconfiguration dcmiConfiguration;
 extern std::map<uint8_t, std::map<uint8_t, Ipmisdr>> sdr_rec;
