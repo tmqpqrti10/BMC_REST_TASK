@@ -14,6 +14,7 @@
 #include <mutex>
 #include <redfish/resource.hpp>
 #include "psu_server.hpp"
+#include "ipmi/efte.hpp"
 // #include "handler.hpp"
 
 // #include <boost/log/trivial.hpp>
@@ -93,6 +94,7 @@ int main(void)
 		fprintf(stderr, "sdr init failed\n");
 	if (load_g_setting() == -1)
 		fprintf(stderr, "load g setting failed\n");
+	set_eft_init();
 	std::thread t_lanplus(lanplus_handler, &sockfd);
 	std::thread t_dcmi(dcmi_power_handler, &sockfd);
 	std::thread t_redfish(redfish_handler, &sockfd);
