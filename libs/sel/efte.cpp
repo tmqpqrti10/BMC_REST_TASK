@@ -413,12 +413,12 @@ int set_eft_entry_num_to_file(unsigned char *size){
 }
 
 
-/*
- * set_eft_init 
- * Return : 0 (Success)
- *          -1 (Wrong) 
- *
- * Description : Set preconfigured PEF table 
+/**
+ * @brief set_eft_entry
+ * @author kys 
+ * @param void *entry
+ * @return 0 (Success) -1 (Wrong)
+ * @details Set Event Filter Table's entry init
  */
 int set_eft_init(void){
 	FILE *fp;
