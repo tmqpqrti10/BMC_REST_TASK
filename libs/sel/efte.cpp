@@ -416,7 +416,7 @@ int set_eft_entry_num_to_file(unsigned char *size){
 /**
  * @brief set_eft_entry
  * @author kys 
- * @param void *entry
+ * @param void 
  * @return 0 (Success) -1 (Wrong)
  * @details Set Event Filter Table's entry init
  */
