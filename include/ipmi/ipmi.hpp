@@ -872,7 +872,6 @@ typedef struct {
 #define PEF_CFGPARM_ID_PEF_ALERT_STRING_KEY 12
 #define PEF_CFGPARM_ID_PEF_ALERT_STRING_TABLE_ENTRY 13
 
-<<<<<<< HEAD
 #define PEF_FILTER_DISABLED 0x7F
 #define PEF_FILTER_ENABLED 0x80
 #define PEF_FILTER_TABLE_ID_MASK 0x7F
@@ -916,8 +915,6 @@ typedef struct {
 #define PEF_POLICY_EVENT_SPECIFIC 0x80
 #define PEF_SYSTEM_GUID_USED_IN_PET 0x01
 #define PEB_SENSOR_NUM_BASE 0x24 // PEB_SENSOR_ADC_P12V
-=======
->>>>>>> f5c5c914c5de1a00e1c485122e192df1021e6826
 
 typedef struct {
   uint8_t data1;
