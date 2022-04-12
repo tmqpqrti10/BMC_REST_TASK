@@ -1,5 +1,6 @@
 #include "ipmi/efte.hpp"
-
+#include "ipmi/common.hpp"
+#include "ipmi/sensor_define.hpp"
 
 
 extern pef_table_entry_t g_eft_data[EVENT_FILTER_TABLE_ELEMS_MAX];
@@ -107,13 +108,12 @@ int set_pef_enable(unsigned char recid, unsigned char enable){
 	uint8_t zero = 0;
 	g_eft_data[recid].config = zero;
 	if(enable == 0){	// disable
-		g_eft_data[recid].config &= PEF_CONFIG_ENABLED;
+		g_eft_data[recid].config = PEF_FILTER_DISABLED;
 	}
 	else{ // enable
-		g_eft_data[recid].config |= PEF_CONFIG_ENABLED;
+		g_eft_data[recid].config = PEF_FILTER_ENABLED;
 	}
-
-	if(set_eft_entry(recid, &(g_eft_data[recid])) < 0){
+	if(set_eft_entry(recid, &(g_eft_data[recid].config)) < 0){
 		return -1;
 	}
 	return 0;
@@ -228,9 +228,9 @@ int set_pef_ctrl_to_file(unsigned char *data){
 	//success
 	fclose(fp);
 
-	char save[500] = {0,};
-	sprintf(save, "cp %s /backup_conf/ipmi/", EVENT_FILTER_TABLE_FILE);
-	system(save);
+	// char save[500] = {0,};
+	// sprintf(save, "cp %s /backup_conf/ipmi/", EVENT_FILTER_TABLE_FILE);
+	// system(save);
 
 	return 0;
 }
@@ -322,9 +322,9 @@ int set_pef_act_glb_ctrl_to_file(unsigned char *data){
 	//success
 	fclose(fp);
 
-	char save[500] = {0,};
-	sprintf(save, "cp %s /backup_conf/ipmi/", EVENT_FILTER_TABLE_FILE);
-	system(save);
+	// char save[500] = {0,};
+	// sprintf(save, "cp %s /backup_conf/ipmi/", EVENT_FILTER_TABLE_FILE);
+	// system(save);
 
 	return 0;
 }
@@ -405,20 +405,20 @@ int set_eft_entry_num_to_file(unsigned char *size){
 	//success
 	fclose(fp);
 
-	char save[500] = {0,};
-	sprintf(save, "cp %s /backup_conf/ipmi/", EVENT_FILTER_TABLE_FILE);
-	system(save);
+	// char save[500] = {0,};
+	// sprintf(save, "cp %s /backup_conf/ipmi/", EVENT_FILTER_TABLE_FILE);
+	// system(save);
 
 	return 0;
 }
 
 
-/*
- * set_eft_init 
- * Return : 0 (Success)
- *          -1 (Wrong) 
- *
- * Description : Set preconfigured PEF table 
+/**
+ * @brief set_eft_entry
+ * @author kys 
+ * @param void 
+ * @return 0 (Success) -1 (Wrong)
+ * @details Set Event Filter Table's entry init
  */
 int set_eft_init(void){
 	FILE *fp;
@@ -430,6 +430,28 @@ int set_eft_init(void){
 	uint8_t r1, r2, r3;
 	int j;
 	int vol = 15, temp = 38, cur = 2, fan=17, dp=0;
+	int pef_index=0;
+	int pef_eft_table_size = 4;
+	cout << "pef table init start " <<endl;
+	pef_table_entry_t pef_init_table[pef_eft_table_size] = {
+		{PEF_FILTER_ENABLED,EVENT_FILTER_ACTION_POWER_OFF,PEF_POLICY_NUMBER_DONT_CARE, EVENT_SEVERITY_MONITOR,
+		0x02,0x00,0x08, 0x24,0xff,0x00,0x00,0x00, 0x00,0x00,0x00,0x00, 0x00,0x00,0x00,0x00},
+
+		{PEF_FILTER_DISABLED,PEF_ACTION_RESET,PEF_POLICY_NUMBER_DONT_CARE, EVENT_SEVERITY_INFORMATION,
+		0x02,0x00,0x09, NVA_SENSOR_PSU1_WATT,PEF_EVENT_TRIGGER_SENSOR_SPECIFIC,0x00,0x00,0x00, 0x00,0x00,0x00,0x00, 0x00,0x00,0x00,0x00},
+
+		{PEF_FILTER_DISABLED,EVENT_FILTER_ACTION_ALERT,PEF_POLICY_NUMBER_DONT_CARE, EVENT_SEVERITY_NON_CRITICAL,
+		0x02,0x00,0x0c, PDPB_SENSOR_TEMP_CPU0,PEF_EVENT_TRIGGER_SENSOR_SPECIFIC,0x00,0x00,0x00, 0x00,0x00,0x00,0x00, 0x00,0x00,0x00,0x00},
+
+		{PEF_FILTER_DISABLED,PEF_ACTION_RESET_AND_POWER_CYCLE,PEF_POLICY_NUMBER_DONT_CARE, PEF_SEVERITY_OK,
+		0x02,0x00,0x04, NVA_SENSOR_PSU1_TEMP,PEF_EVENT_TRIGGER_THRESHOLD,0x00,0x00,0x00, 0x00,0x00,0x00,0x00, 0x00,0x00,0x00,0x00},
+	};
+
+	
+	for (pef_index = 1; pef_index <= pef_eft_table_size;pef_index++){
+		cout <<"pef index : " <<pef_index << endl;
+		set_eft_entry(pef_index,&pef_init_table[pef_index-1]);
+	}
 
 	if(access(EVENT_FILTER_TABLE_FILE, F_OK) < 0){
 		pef_ctrl = CONTROL_PEF_ENABLE | CONRTOL_PEF_ALERT_STARTUP_DELAY;
@@ -701,9 +723,9 @@ int set_eft_entry_to_file(unsigned char *size, void *entry){
 	//success
 	fclose(fp);
 
-	char save[500] = {0,};
-	sprintf(save, "cp %s /backup_conf/ipmi/", EVENT_FILTER_TABLE_FILE);
-	system(save);
+	// char save[500] = {0,};
+	// sprintf(save, "cp %s /backup_conf/ipmi/", EVENT_FILTER_TABLE_FILE);
+	// system(save);
 
 	return 0;
 }
@@ -989,8 +1011,8 @@ pef_set_config_param (ipmi_req_t *request,
 			break;
 		case 7:
 			id = req->data[1];
-			entry = &req->data[2];
-			if(set_pef_cfg(id, (struct pef_policy_entry*)entry) < 0){
+			entry = req->data[2];
+			if(set_pef_enable(id,entry) < 0){
 				res->cc = CC_UNSPECIFIED_ERROR;
 				return;
 			}
