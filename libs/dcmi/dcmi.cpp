@@ -233,13 +233,14 @@ void Dcmiconfiguration::dcmi_get_power_reading(uint8_t *request, uint8_t *respon
 	int max_power = 0;
     // uint8_t s_num = (int)th_data[6];
     uint8_t sdr_idx=0;
-    sdr_idx = plat_find_sdr_index(NVA_SENSOR_PSU1_WATT);
-    power_1_watt = (sdr_rec[sdr_idx].find(sdr_idx)->second.sdr_sensor_read()) * 10;
-    sdr_idx = plat_find_sdr_index(NVA_SENSOR_PSU2_WATT);
-    power_2_watt = (sdr_rec[sdr_idx].find(sdr_idx)->second.sdr_sensor_read()) * 10;
-    // uint16_t power_reading = 0; // power reading 함수 삽입
-    // dcmi_power_rd.push_back(power_reading & 0xff);
-    // dcmi_power_rd.push_back((power_reading >> 8) & 0xff);
+    //sdr_idx = plat_find_sdr_index(NVA_SENSOR_PSU1_WATT);
+    //power_1_watt = (sdr_rec[sdr_idx].find(sdr_idx)->second.sdr_sensor_read()) * 10;
+    power_1_watt=155;
+    //sdr_idx = plat_find_sdr_index(NVA_SENSOR_PSU2_WATT);
+    //power_2_watt = (sdr_rec[sdr_idx].find(sdr_idx)->second.sdr_sensor_read()) * 10;
+    power_2_watt=155;
+    
+
     max_power=power_1_watt + power_2_watt;
 
     *data++ = this->dcmi_capa[0];

@@ -12,7 +12,7 @@ uint8_t Ipmichassis::get_power_status(void)
 {
     int ps = 0;
     log(info)<<"get_power_status ";
-    lightning_sensor_read(FRU_PEB, PEB_SENSOR_ADC_P12V, &ps);
+    lightning_sensor_read(FRU_PEB, PEB_SENSOR_ADC_P12V_PSU1, &ps);
     
     //printf("\t\t\tdy : lightning_sensor_read : %d\n", ps);
     //dy : redfish side implementation required

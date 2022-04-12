@@ -1,53 +1,35 @@
 /**
  * @file i2c or gpio를 통한 센서값 리딩 smbus pmbus
- * 
+ *
  */
-#include <ipmi/lightning_sensor.hpp>
+#include <ipmi/ipmb.hpp>
 #include <ipmi/ipmi.hpp>
-#include<util/smbus.hpp>
-
+#include <ipmi/lightning_sensor.hpp>
+#include <util/smbus.hpp>
 // g_TMAX 사용
 #include <ipmi/snrctrl.hpp>
 typedef unsigned char u8;
 typedef unsigned int u32;
 typedef unsigned short u16;
-struct timing_negotiation
-{
+struct timing_negotiation {
   u8 msg_timing;
   u8 addr_timing;
 };
 /**
- * @brief limit power 
+ * @brief limit power
  * @author 박기철
  */
-int g_Tmax=90;
+int g_Tmax = 90;
 static pthread_mutex_t m_sensor;
 int temp_data[64];
 int tacho_data[16];
 
-enum temp_sensor_type
-{
+enum temp_sensor_type {
   LOCAL_SENSOR = 0,
   REMOTE_SENSOR,
 };
-//  enum tmp75_peb_sensors {
-//    PEB_TMP75_U136 = 0x4d,
-//    PEB_TMP75_U134 = 0x4a,LOCAL_SENSOR
-//    PEB_TMP421_U15 = 0x4c,
-//    PEB_MAX6654_U4 = 0x18,
-//  };
 
-//  enum tmp75_pdpb_sensors {
-//    PDPB_TMP75_U70 = 0x4f,
-//    PDPB_TMP75_U71 = 0x49,
-//    PDPB_TMP75_U72 = 0x4A,
-//    PDPB_TMP75_U73 = 0x48,
-//    PDPB_TMP75_U69 = 0x4E,// check duplicate address
-//    PDPB_TMP75_U205 = 0x4C,
-//  };
-
-enum nct7904_registers
-{
+enum nct7904_registers {
   NCT7904_TEMP_CH1 = 0x42,
   NCT7904_TEMP_CH2 = 0x46,
   NCT7904_VSEN6 = 0x4A,
@@ -58,14 +40,12 @@ enum nct7904_registers
   NCT7904_BANK_SEL = 0xFF,
 };
 
-enum hsc_controllers
-{
+enum hsc_controllers {
   HSC_ADM1276 = 0,
   HSC_ADM1278,
 };
 
-enum hsc_commands
-{
+enum hsc_commands {
   HSC_IN_VOLT = 0x88,
   HSC_OUT_CURR = 0x8c,
   HSC_IN_POWER = 0x97,
@@ -77,8 +57,7 @@ enum hsc_commands
 //    ADS1015_CONFIG,
 //  };
 
-enum ads1015_channels
-{
+enum ads1015_channels {
   ADS1015_CHANNEL0 = 0,
   ADS1015_CHANNEL1,
   ADS1015_CHANNEL2,
@@ -108,87 +87,62 @@ enum ads1015_channels
 //    ADC_PIN15,
 //  };
 
-//  enum tmp75_nva_sensors {
-//    NVA_TMP75_1 = 0x48,
-//    NVA_TMP75_2 = 0x49,
-//    NVA_TMP75_3 = 0x4a,
-//    NVA_TMP75_4 = 0x4b,
-//  };
-
-//  enum psu_nva_regs{
-//    NVA_PSU_TEMP=0x8d,
-//    NVA_PSU_TEMP2=0x8e,
-//    NVA_PSU_FAN1=0x90,
-//    NVA_PSU_FAN2=0x91,
-//    NVA_PSU_WATT=0x96,
-//  };
-
 // Helper function for msleep
-void msleep(int msec)
-{
+void msleep(int msec) {
   struct timespec req;
 
   req.tv_sec = 0;
   req.tv_nsec = msec * 1000 * 1000;
 
-  while (nanosleep(&req, &req) == -1 && errno == EINTR)
-  {
+  while (nanosleep(&req, &req) == -1 && errno == EINTR) {
     continue;
   }
 }
 
-int32_t signextend32(uint32_t val, int idx)
-{
+int32_t signextend32(uint32_t val, int idx) {
   uint8_t shift = 31 - idx;
   return (int32_t)(val << shift) >> shift;
 }
 
 /**
  * @brief 입력된 하드웨어 주소의 센서 값을 읽어오는 함수
- * 
+ *
  * @param device 센서 하드웨어 주소
  * @param value 센서 값
  * @return int 성공 유무 (0 : 성공 / errno : 실패)
  **/
-static int read_device(const char *device, int *value)
-{
+static int read_device(const char *device, int *value) {
   FILE *fp;
   int rc;
 
   fp = fopen(device, "r");
-  if (!fp)
-  {
+  if (!fp) {
     int err = errno;
     printf("failed to open device %s", device);
     return err;
   }
   // int ab=i2c_smbus_read_byte(fp);
   // cout<<"\n\n\n\n\n\n\nsmbus_readbyte = "<<ab<<endl;
-  
+
   rc = fscanf(fp, "%d", value);
   printf("read device : %d\n", value);
   fclose(fp);
 
-  if (rc != 1)
-  {
+  if (rc != 1) {
     printf("failed to read device %s", device);
     return ENOENT;
-  }
-  else
-  {
+  } else {
     return 0;
   }
 }
 
-static int read_device_float(const char *device, float *value)
-{
+static int read_device_float(const char *device, float *value) {
   FILE *fp;
   int rc;
   char tmp[10];
 
   fp = fopen(device, "r");
-  if (!fp)
-  {
+  if (!fp) {
     int err = errno;
 #ifdef DEBUG
     LOG_ALL_INFO(LOG_INFO, "failed to open device %s", device);
@@ -199,8 +153,7 @@ static int read_device_float(const char *device, float *value)
   rc = fscanf(fp, "%s", tmp);
   fclose(fp);
 
-  if (rc != 1)
-  {
+  if (rc != 1) {
 #ifdef DEBUG
     LOG_ALL_INFO(LOG_INFO, "failed to read device %s", device);
 #endif
@@ -214,70 +167,72 @@ static int read_device_float(const char *device, float *value)
 
 /**
  * @brief 입력된 하드웨어 디바이스 드라이버의 센서 값를 읽어오는 함수
- * 
- * @param device 디바이스 드라이버 경로 ex)/root/sys/devices/platform/ast_adc.0//adc0_value
+ *
+ * @param device 디바이스 드라이버 경로
+ ex)/root/sys/devices/platform/ast_adc.0//adc0_value
  * @param value 센서 값 ex)150
 
  * @return int 성공 유무 (0 : 성공 / errno : 실패)
  **/
-static int read_device_int(const char *device, int *value)
-{
+static int read_device_int(const char *device, int *value) {
   FILE *fp;
   int rc;
   char tmp[10];
-  //cout<<"read_device_int start"<<endl;
   fp = fopen(device, "r");
-  if (!fp)
-  {
+  if (!fp) {
     int err = errno;
     printf("failed to open device %s", device);
     return err;
   }
 
-  
-
   rc = fscanf(fp, "%s", tmp);
   fclose(fp);
 
-  if (rc != 1)
-  {
+  if (rc != 1) {
 
-    printf("failed to read device %s", device);
+    // printf("failed to read device %s", device);
+    // tacho데이터를 읽을때 0이하는 읽을수없다 ㅇ
     return ENOENT;
   }
-  //cout<<"device ="<<device<<endl;
-  // fp = open(device, O_RDWR);
-  // if (!fp)
-  // {
-  //   int err = errno;
-  //   printf("failed to open device %s", device);
-  //   return err;
-  // }
-  
+
   *value = atoi(tmp);
-  // unsigned char values[6];
-  // if(i2c_smbus_write_word_data(fp, 0x03, 5555)<0)
-  // {
-  //   perror("i2c_smbus_write_word_data not ");
-  // }
-  // else{
-  //   cout<<"smbus 정상수행"<<endl;
-  // }
-  // values[0] = i2c_smbus_read_word_data(fp, 0x03);
-  // values[1] = i2c_smbus_read_word_data(fp, 0x04);
-  // values[2] = i2c_smbus_read_word_data(fp, 0x05);
-  // values[3] = i2c_smbus_read_word_data(fp, 0x06);
-  // values[4] = i2c_smbus_read_word_data(fp, 0x07);
-  // values[5] = i2c_smbus_read_word_data(fp, 0x08);
-  // print out result
-  // printf("Values: X MSB: %d, X LSB: %d, Y MSB: %d, Y LSB: %d, Z MSB: %d, Z LSB: %d\n",
-  //   values[0],values[1],values[2],values[3],values[4],values[5]);
-  //cout <<"i2c =read value ="<<*value<<endl;
   return 0;
 }
+/**
+ * @brief AST2600 ADC 포팅을 위한 함수
+ *
+ * @param pin
+ * @param device
+ * @param value
+ * @return int
+ */
+int read_adc_value_KTNF(const int pin, const char *device, int *value) {
+  char device_name[LARGEST_DEVICE_NAME];
+  char full_name[LARGEST_DEVICE_NAME];
+  int val = 0;
+  int ret;
+  string adc_dir = ADC_DIR;
+  // cout<<"read_adc_value_KTNF pin ="<<pin<<endl;
+  int real_pin = pin;
+  if (pin >= 7) {
+    adc_dir = ADC_DIR1;
+    real_pin = pin % 8;
+  }
+  snprintf(device_name, adc_dir.c_str(), device, real_pin);
+  // cout << "read_adc_value_KTNF : device_name =" << device_name << endl;
+  snprintf(full_name, LARGEST_DEVICE_NAME, "%s/%s", adc_dir.c_str(),
+           device_name);
+  // cout << "read_adc_value_KTNF : full_name =" << full_name << endl;
+  try {
+    ret = read_device_int(full_name, &val);
+  } catch (const std::exception &e) {
+    cout << "read_adc_value_KTNF error : not exist " << full_name << endl;
+  }
+  *value = val; //>>2
+  return (ret);
+}
 
-int read_adc_value(const int pin, const char *device, int *value)
-{
+int read_adc_value(const int pin, const char *device, int *value) {
   char device_name[LARGEST_DEVICE_NAME];
   char full_name[LARGEST_DEVICE_NAME];
   int val = 0;
@@ -292,13 +247,12 @@ int read_adc_value(const int pin, const char *device, int *value)
 
 /**
  * @brief 팬의 RPM 속도를 읽어오는 함수
- * 
+ *
  * @param pin 팬의 Index 번호
  * @param value 팬 RPM 값
  * @return int 성공 유무
  **/
-static int read_tacho_value(const int pin, int *value)
-{
+static int read_tacho_value(const int pin, int *value) {
   char device_name[MAX_DVNAME_LEN] = {0};
   char full_name[MAX_DVNAME_LEN] = {0};
   int ret;
@@ -314,8 +268,7 @@ static int read_tacho_value(const int pin, int *value)
   return ret;
 }
 
-static int i2c_write(int i2c_dev, int addr, char value)
-{
+static int i2c_write(int i2c_dev, int addr, char value) {
   unsigned char val[2] = {0};
 
   val[0] = addr;
@@ -328,15 +281,14 @@ static int i2c_write(int i2c_dev, int addr, char value)
 /**
  * @brief TMP75 센서의 온도값을 읽어오는 함수\n
  * TMP75의 주소값을 통해 I2C 통신으로 센서 값을 읽어옴
- * 
+ *
  * @param device 읽을 센서의 디바이스 드라이버
  * @param addr 센서 주소값
  * @param type 센서 타입
  * @param value 센서 값
  * @return int 성공 유무
  */
-static int i2c_read(int i2c_dev, int addr)
-{
+static int i2c_read(int i2c_dev, int addr) {
   unsigned char val[2] = {0};
 
   val[0] = addr;
@@ -346,8 +298,7 @@ static int i2c_read(int i2c_dev, int addr)
 
   return val[1];
 }
-static int i2c_readw(int i2c_dev, int addr)
-{
+static int i2c_readw(int i2c_dev, int addr) {
   unsigned char val[2] = {0};
   unsigned char rval[2] = {0};
   int ret;
@@ -361,8 +312,7 @@ static int i2c_readw(int i2c_dev, int addr)
   return ret;
 }
 
-static unsigned int i2c_readw_r(int i2c_dev, int addr)
-{
+static unsigned int i2c_readw_r(int i2c_dev, int addr) {
   unsigned char val[2] = {0};
   unsigned char rval[2] = {0};
   unsigned int ret;
@@ -376,19 +326,17 @@ static unsigned int i2c_readw_r(int i2c_dev, int addr)
   return ret;
 }
 
-int read_tmp75_temp_value(const char *device, int *value)
-{ // float *value
+/**
+ * @brief AST2600 smltr에서 사용된 온습도센서
+ *
+ * @param device
+ * @param value
+ * @return int
+ */
+int read_tmp75_temp_value(const char *device, int *value) { // float *value
   char full_name[LARGEST_DEVICE_NAME + 1];
   int tmp, ret = 0;
   snprintf(full_name, LARGEST_DEVICE_NAME, "%s/temp1_input", device);
-
-  /*
-  if (read_device(full_name, &tmp)) {
-    return -1;
-  }
-
-  *value = ((float)tmp);///UNIT_DIV
- */
   ret = read_device_int(full_name, &tmp);
   *value = tmp;
   return ret;
@@ -397,60 +345,56 @@ int read_tmp75_temp_value(const char *device, int *value)
 /**
  * @brief TMP75 센서의 온도값을 읽어오는 함수\n
  * TMP75의 주소값을 통해 I2C 통신으로 센서 값을 읽어옴
- * 
+ *
  * @param device 읽을 센서의 디바이스 드라이버
  * @param addr 센서 주소값
  * @param type 센서 타입
  * @param value 센서 값
  * @return int 성공 유무
  */
-static int read_i2c_value(char *device, uint8_t addr, uint8_t type, uint32_t *value)
-{
+static int read_i2c_value(char *device, uint8_t addr, uint8_t type,
+                          uint32_t *value) {
 
   int dev;
   int ret;
   int32_t res;
-  cout<<"read_i2c_value device"<<device<<endl;
+  // cout << "read_i2c_value device" << device << endl;
   dev = open(device, O_RDWR);
-  if (dev < 0)
-  {
-    cout << ("read_i2c_value: open() failed");
+  if (dev < 0) {
+    perror("read_i2c_value: open() failed");
     return -1;
   }
-  cout<<"read_i2c_value dev"<<dev<<endl;
-  cout<<"read_i2c_value addr"<<addr<<endl;
-  if (ioctl(dev, I2C_SLAVE_FORCE, addr) < 0)
-  {
+  // cout << "read_i2c_value dev" << dev << endl;
+  // cout << "read_i2c_value addr" << addr << endl;
+  if (ioctl(dev, I2C_SLAVE_FORCE, addr) < 0) {
     perror("ioctl() assigning i2c addr failed");
     close(dev);
     return -1;
   }
-  if(i2c_smbus_write_word_data(dev, 0, 255)<0)
-  {
+  if (i2c_smbus_write_word_data(dev, 0, 255) < 0) {
     perror("i2c_smbus_write_word_data not ");
   }
   unsigned char values;
-  
-  values=i2c_smbus_read_word_data(dev, 0x03);
-  printf("Values: X MSB: %d\n",values);
 
-  cout<<"read_i2c_value type"<<type<<endl;
+  values = i2c_smbus_read_word_data(dev, 0x03);
+  // printf("Values: X MSB: %d\n", values);
+
+  // cout << "read_i2c_value type" << static_cast<int>(type) << endl;
   res = i2c_readw(dev, type);
   res >>= 4;
-  cout<<"read_i2c_value res"<<(int)res<<endl;
+  // cout << "read_i2c_value res" << (int)res << endl;
   *value = static_cast<uint32_t>(res);
-   cout<<"read_i2c_value value"<<(int)*value<<endl;
+  // cout << "read_i2c_value value" << (int)*value << endl;
   close(dev);
   return 1;
 }
 
-int read_temp_value(char *device, uint8_t addr, uint8_t type, uint32_t *value)
-{
+int read_temp_value(char *device, uint8_t addr, uint8_t type, uint32_t *value) {
   int ret;
   int val;
-  cout<<"read_temp_value"<<endl;
+  // cout << "read_temp_value" << endl;
   ret = read_i2c_value(device, addr, type, &val);
-  cout<<"ret"<<endl;
+  // cout << "ret" << endl;
   *value = val >> 3;
 
   return ret;
@@ -459,16 +403,15 @@ int read_temp_value(char *device, uint8_t addr, uint8_t type, uint32_t *value)
 /**
  * @brief PSU(Power Supply Unit)의 정보를 읽어오는 함수\n
  * PMBus를 통하여 PSU의 온도, 팬 RPM, 전력량 등의 정보를 수집함.
- * 
+ *
  * @param device PSU 디바이스 드라이버
  * @param addr PSU 번호
  * @param type 센서 타입 (온도, 팬, 전력량)
  * @param value 센서 값
  * @return int 성공 유무
  */
-static int
-read_psu_value(char *device, uint8_t addr, uint8_t type, int *value)
-{
+static int read_psu_value(char *device, uint8_t addr, uint8_t type,
+                          int *value) {
 
   int dev;
   int ret;
@@ -476,15 +419,13 @@ read_psu_value(char *device, uint8_t addr, uint8_t type, int *value)
   int8_t n;
   int16_t y;
   dev = open(device, O_RDWR);
-  if (dev < 0)
-  {
-    cout << ("read_psu_value: open() failed\n");
+  if (dev < 0) {
+    cout << ("read_psu_value: open() failed") << endl;
     return -1;
   }
 
-  if (ioctl(dev, I2C_SLAVE_FORCE, addr) < 0)
-  {
-    cout << ("read_i2c_value: ioctl() assigning i2c addr failed\n");
+  if (ioctl(dev, I2C_SLAVE_FORCE, addr) < 0) {
+    cout << ("read_i2c_value: ioctl() assigning i2c addr failed") << endl;
     close(dev);
     return -1;
   }
@@ -500,28 +441,21 @@ read_psu_value(char *device, uint8_t addr, uint8_t type, int *value)
     y |= 0xF800;
   *value = (y * pow(2, n));
 
-  if ((type == NVA_PSU_FAN1) || (type == NVA_PSU_FAN2))
-  {
+  if ((type == NVA_PSU_FAN1) || (type == NVA_PSU_FAN2)) {
     *value = (*value + 50) / 100;
-  }
-  else if (type == NVA_PSU_WATT)
-  {
+  } else if (type == NVA_PSU_WATT) {
     *value = (*value + 5) / 10;
   }
 
   return 0;
 }
 
-static int
-read_temp(const char *device, float *value)
-{
+static int read_temp(const char *device, float *value) {
   char full_name[LARGEST_DEVICE_NAME + 1];
   int tmp;
 
-  snprintf(
-      full_name, LARGEST_DEVICE_NAME, "%s/temp1_input", device);
-  if (read_device(full_name, &tmp))
-  {
+  snprintf(full_name, LARGEST_DEVICE_NAME, "%s/temp1_input", device);
+  if (read_device(full_name, &tmp)) {
     return -1;
   }
 
@@ -530,67 +464,55 @@ read_temp(const char *device, float *value)
   return 0;
 }
 
-static int
-read_hsc_value(uint8_t reg, char *device, uint8_t addr, uint8_t cntlr, float *value)
-{
+static int read_hsc_value(uint8_t reg, char *device, uint8_t addr,
+                          uint8_t cntlr, float *value) {
 
   int dev;
   int ret;
   int32_t res;
 
   dev = open(device, O_RDWR);
-  if (dev < 0)
-  {
+  if (dev < 0) {
     cout << ("read_hsc_value: open() failed");
     return -1;
   }
 
   /* Assign the i2c device address */
   ret = ioctl(dev, I2C_SLAVE, addr);
-  if (ret < 0)
-  {
+  if (ret < 0) {
     cout << ("read_hsc_value: ioctl() assigning i2c addr failed");
     close(dev);
     return -1;
   }
   close(dev);
 
-  switch (reg)
-  {
+  switch (reg) {
   case HSC_IN_VOLT:
     res &= 0xFFF; // This Parameter uses bits [11:0]
-    if (cntlr == HSC_ADM1276 || cntlr == HSC_ADM1278)
-    {
+    if (cntlr == HSC_ADM1276 || cntlr == HSC_ADM1278) {
       *value = (1.0 / 19599) * ((res * 100) - 0);
     }
     break;
   case HSC_OUT_CURR:
     res &= 0xFFF; // This Parameter uses bits [11:0]
-    if (cntlr == HSC_ADM1276)
-    {
+    if (cntlr == HSC_ADM1276) {
       *value = ((res * 10) - 20475) / (807 * 0.1667);
-    }
-    else if (cntlr == HSC_ADM1278)
-    {
+    } else if (cntlr == HSC_ADM1278) {
       *value = (1.0 / 1600) * ((res * 10) - 20475);
     }
     break;
   case HSC_IN_POWER:
     res &= 0xFFFF; // This Parameter uses bits [15:0]
-    if (cntlr == HSC_ADM1276)
-    {
+    if (cntlr == HSC_ADM1276) {
       *value = ((res * 100) - 0) / (6043 * 0.1667);
-    }
-    else if (cntlr == HSC_ADM1278)
-    {
+    } else if (cntlr == HSC_ADM1278) {
       *value = (1.0 / 12246) * ((res * 100) - 0);
     }
     *value *= 0.99; // This is to compensate the controller reading offset value
     break;
   case HSC_TEMP:
     res &= 0xFFF; // This Parameter uses bits [11:0]
-    if (cntlr == HSC_ADM1278)
-    {
+    if (cntlr == HSC_ADM1278) {
       *value = (1.0 / 42) * ((res * 10) - 31880);
     }
     *value *= 0.97; // This is to compensate the controller reading offset value
@@ -603,9 +525,8 @@ read_hsc_value(uint8_t reg, char *device, uint8_t addr, uint8_t cntlr, float *va
   return 0;
 }
 
-static int
-read_nct7904_value(uint8_t reg, char *device, uint8_t addr, float *value)
-{
+static int read_nct7904_value(uint8_t reg, char *device, uint8_t addr,
+                              float *value) {
 
   int dev;
   int ret;
@@ -620,32 +541,26 @@ read_nct7904_value(uint8_t reg, char *device, uint8_t addr, float *value)
   float multipler;
 
   dev = open(device, O_RDWR);
-  if (dev < 0)
-  {
+  if (dev < 0) {
     cout << ("read_nct7904_value: open() failed");
     return -1;
   }
 
   /* Assign the i2c device address */
   ret = ioctl(dev, I2C_SLAVE, addr);
-  if (ret < 0)
-  {
+  if (ret < 0) {
     cout << ("read_nct7904_value: ioctl() assigning i2c addr failed");
   }
 
   close(dev);
 
-  if (reg >= FAN_REGISTER && reg <= FAN_REGISTER + 22)
-  {
+  if (reg >= FAN_REGISTER && reg <= FAN_REGISTER + 22) {
     res = ((res_h & 0xFF) << 5) | (res_l & 0x1F);
-  }
-  else
-  {
+  } else {
     res = ((res_h & 0xFF) << 3) | (res_l & 0x7);
   }
 
-  switch (reg)
-  {
+  switch (reg) {
   case NCT7904_TEMP_CH1:
     multipler = (0.125 /* NCT7904 Section 6.4 */);
     break;
@@ -666,35 +581,29 @@ read_nct7904_value(uint8_t reg, char *device, uint8_t addr, float *value)
     break;
   }
 
-  if (reg >= FAN_REGISTER && reg <= FAN_REGISTER + 22)
-  {
+  if (reg >= FAN_REGISTER && reg <= FAN_REGISTER + 22) {
     /* fan speed reading */
     if (res == 0x1fff || res == 0)
       *value = 0;
     else
       *value = (float)(1350000 / res);
-  }
-  else
-  {
+  } else {
     /* temp sensor reading */
-    if (reg == NCT7904_TEMP_CH1 || reg == NCT7904_TEMP_CH2)
-    {
+    if (reg == NCT7904_TEMP_CH1 || reg == NCT7904_TEMP_CH2) {
 
       *value = signextend32(res, 10) * multipler;
       if (reg == NCT7904_TEMP_CH2)
         *value = *value - 2;
       /* other sensor reading */
-    }
-    else
+    } else
       *value = (float)(res * multipler);
   }
 
   return 0;
 }
 
-static int
-read_ads1015_value(uint8_t channel, char *device, uint8_t addr, float *value)
-{
+static int read_ads1015_value(uint8_t channel, char *device, uint8_t addr,
+                              float *value) {
 
   int dev;
   int ret;
@@ -702,15 +611,13 @@ read_ads1015_value(uint8_t channel, char *device, uint8_t addr, float *value)
   int32_t res;
 
   dev = open(device, O_RDWR);
-  if (dev < 0)
-  {
+  if (dev < 0) {
     cout << ("read_ads1015_value: open() failed");
     return -1;
   }
 
   ret = ioctl(dev, I2C_SLAVE, addr);
-  if (ret < 0)
-  {
+  if (ret < 0) {
     cout << ("read_ads1015_value: ioctl() assigning i2c addr failed");
     close(dev);
     return -1;
@@ -726,59 +633,61 @@ read_ads1015_value(uint8_t channel, char *device, uint8_t addr, float *value)
   return 0;
 }
 /**
- *@brief ADC 데이터를 읽는 곳 가상시뮬레이터는 0~9까지 생성함
+ *@brief FAN ADC 데이터를 읽는 곳
+ *@bug KTNF-AST2600a3보드에선 0~5개까지 존재함
  */
-int read_fan_value(int fanno, int *value)
-{
+int read_fan_value(int fanno, int *value) {
   int ret;
   ret = read_tacho_value(fanno, value);
   tacho_data[fanno] = *value;
-  cout << ("read_fan_value: fanno:%d value:%f", fanno, *value);
+  // cout << ("read_fan_value: fanno:%d value:%f", fanno, *value);
   return ret;
 }
 /**
 @brief IPMB의 Checksum을 확인하는 함수이다.
 **/
- static unsigned char calc_checksum(uint8_t *buf, uint8_t len) {
-   uint8_t i = 0;
-   uint8_t cksum = 0;
+static unsigned char calc_checksum(uint8_t *buf, uint8_t len) {
+  uint8_t i = 0;
+  uint8_t cksum = 0;
 
-   for (i = 0; i < len; i++) {
-     cksum += buf[i];
-   }
+  for (i = 0; i < len; i++) {
+    cksum += buf[i];
+  }
 
-   return (ZERO_CKSUM_CONST - cksum);
- }
+  return (ZERO_CKSUM_CONST - cksum);
+}
 
-void get_ipmb_sensor(int id, unsigned char *response, unsigned char res_len)
-{
-  ipmb_res_t *res = (ipmb_res_t *) response;
+void get_ipmb_sensor(int id, unsigned char *response, unsigned char res_len) {
+  ipmb_res_t *res = (ipmb_res_t *)response;
   int i;
-  switch(id)
-  {
-    case 48:
-      g_Tmax = res->data[0];
+  switch (id) {
+  case 48:
+    g_Tmax = res->data[0];
     break;
-    case 0x4B:
-      temp_data[0] = res->data[3];
-      temp_data[1] = res->data[4];
-      for(i=0; i<8; i++){
-        if (res->data[5+i] != 0xff)
-          temp_data[2+i] = res->data[5+i];
-        else
-          temp_data[2+i] = 0;
-      }
-      for(i=0; i<8; i++){
-        if (res->data[13+i] != 0xff)
-          temp_data[2+12+i] = res->data[13+i];
-        else
-          temp_data[2+12+i] = 0;
-      }
-
+  case 0x4B:
+    temp_data[0] = res->data[3];
+    temp_data[1] = res->data[4];
+    for (i = 0; i < 8; i++) {
+      if (res->data[5 + i] != 0xff)
+        temp_data[2 + i] = res->data[5 + i];
+      else
+        temp_data[2 + i] = 0;
+    }
+    for (i = 0; i < 8; i++) {
+      if (res->data[13 + i] != 0xff)
+        temp_data[2 + 12 + i] = res->data[13 + i];
+      else
+        temp_data[2 + 12 + i] = 0;
+    }
     break;
-    default:
+  default:
     break;
   }
+  cout << "get_ipmb_sensor tempdata" << endl;
+  for (size_t i = 0; i < 64; i++) {
+    cout << "temp_data[" << i << "]=" << temp_data[i] << "  ";
+  }
+  cout << endl;
 }
 // void get_ipmb_sensor1(int id, unsigned char *response, unsigned char res_len)
 // {
@@ -822,23 +731,21 @@ void get_ipmb_sensor(int id, unsigned char *response, unsigned char res_len)
 //    return -1;
 //  }
 
-unsigned char
-ipmb_res_handle (unsigned char *response, unsigned char res_len)
-{
+unsigned char ipmb_res_handle(unsigned char *response, unsigned char res_len) {
 
-  ipmb_res_t *res = (ipmb_res_t *) response;
+  ipmb_res_t *res = (ipmb_res_t *)response;
   unsigned char netfn;
   uint8_t fbyte;
   uint8_t len;
   uint8_t tlun;
 
-//  printf("ipmb_res_handle()\n");
+  //  printf("ipmb_res_handle()\n");
   netfn = res->netfn_lun >> 2;
-  len = res_len; 
+  len = res_len;
 #if 1
-  if (res->hdr_cksum != calc_checksum(response, 2 )) {
-	printf("IPMB Header cksum does not match\n");
-          return 0xff;
+  if (res->hdr_cksum != calc_checksum(response, 2)) {
+    printf("IPMB Header cksum does not match\n");
+    return 0xff;
   }
 #if 0
     if (res->hdr_cksum != calc_cksum(response, 2)) {
@@ -876,42 +783,39 @@ ipmb_res_handle (unsigned char *response, unsigned char res_len)
       }
     }
 #endif
-    // Verify the IPMB data cksum: data starts from 4-th byte
-    if (response[len-1] != calc_checksum(&response[3], len-4)) {
-  //    syslog(LOG_WARNING, "IPMB Data cksum does not match\n");
-      printf("IPMB Data cksum does not match\n");
-      return 0xff;
-    }
+  // Verify the IPMB data cksum: data starts from 4-th byte
+  if (response[len - 1] != calc_checksum(&response[3], len - 4)) {
+    //    syslog(LOG_WARNING, "IPMB Data cksum does not match\n");
+    printf("IPMB Data cksum does not match\n");
+    return 0xff;
+  }
 #endif
- //  printf("IPMB Res NetFn = 0x%02x\n", netfn);
+  //  printf("IPMB Res NetFn = 0x%02x\n", netfn);
 
- // printf("<<<IPMI Handle>>>  netfn = %x, cmd=%x\n", netfn, req->cmd);
-  switch (netfn)
-  {
-    case NETFN_SENSOR_RES:
-  //	printf("IPMB NETFN_SENSOR_RES!\n");
- //     res->netfn_lun = NETFN_CHASSIS_RES << 2;
- //     ipmi_handle_chassis (request, req_len, response, res_len);
-	//ipmb_handle_sensor(response, res_len);
-      break;
-    case NETFN_OEM_GROUP_RES:
-//	ipmb_handle_oem_group(response, res_len);
-//	printf("NETFN_OEM_GROUP_RES!\n");
-      break;
-    default:
-   //   res->netfn_lun = (netfn + 1) << 2;
-      break;
+  // printf("<<<IPMI Handle>>>  netfn = %x, cmd=%x\n", netfn, req->cmd);
+  switch (netfn) {
+  case NETFN_SENSOR_RES:
+    //	printf("IPMB NETFN_SENSOR_RES!\n");
+    //     res->netfn_lun = NETFN_CHASSIS_RES << 2;
+    //     ipmi_handle_chassis (request, req_len, response, res_len);
+    // ipmb_handle_sensor(response, res_len);
+    break;
+  case NETFN_OEM_GROUP_RES:
+    //	ipmb_handle_oem_group(response, res_len);
+    //	printf("NETFN_OEM_GROUP_RES!\n");
+    break;
+  default:
+    //   res->netfn_lun = (netfn + 1) << 2;
+    break;
   }
 
   // This header includes NetFunction, Command, and Completion Code
- // *res_len += SIZE_IPMI_RES_HDR;
+  // *res_len += SIZE_IPMI_RES_HDR;
 
-  return (res->cc); 
+  return (res->cc);
 }
 
-
-int set_value_to_SMLTR(uint8_t sid, uint8_t val)
-{
+int set_value_to_SMLTR(uint8_t sid, uint8_t val) {
   smltr_data_t req_data;
 
   int msqid;
@@ -920,374 +824,350 @@ int set_value_to_SMLTR(uint8_t sid, uint8_t val)
   //	printf("get_value_from_SMLTR is called with sensor : %d \n", sensor_n);
   //	fflush(stdout);
 
-  if (-1 == (msqid = msgget((key_t)8999, IPC_CREAT | 0666)))
-  {
+  if (-1 == (msqid = msgget((key_t)8999, IPC_CREAT | 0666))) {
     perror("msgget() 실패");
     return;
-    //exit(1);
+    // exit(1);
   }
   printf("GET_VALUE_FROM__SMLTR : got the key for sensor  : %d \n", sid);
   fflush(stdout);
   req_data.data_type = 2;
   req_data.sensor_num = sid;
   req_data.value = val;
-  if (-1 == msgsnd(msqid, &req_data, sizeof(smltr_data_t) - sizeof(long), 0))
-  {
+  if (-1 == msgsnd(msqid, &req_data, sizeof(smltr_data_t) - sizeof(long), 0)) {
     perror("msgsnd() 실패");
-    perror("set_value_to_SMLTR 실패 ??");
     return;
-    //exit(1);
+    // exit(1);
   }
 }
 
-int get_value_from_SMLTR(uint8_t sensor_n)
-{
-	smltr_data_t req_data;
-	smltr_data_t res_data;
+int get_value_from_SMLTR(uint8_t sensor_n) {
+  smltr_data_t req_data;
+  smltr_data_t res_data;
 
-	int msqid;
-	int ndx = 0;
-	int ret;
+  int msqid;
+  int ndx = 0;
+  int ret;
 
-	if ( -1 == ( msqid = msgget( (key_t)8998, IPC_CREAT | 0666)))
-	{
-		perror( "msgget() 실패");
-		exit( 1);
-	}
+  if (-1 == (msqid = msgget((key_t)8998, IPC_CREAT | 0666))) {
+    perror("msgget() 실패");
+    exit(1);
+  }
 
-	req_data.data_type = 2; 
-	req_data.sensor_num = (unsigned int) sensor_n;
+  req_data.data_type = 2;
+  req_data.sensor_num = (unsigned int)sensor_n;
 
-	if ( -1 == msgsnd( msqid, &req_data, sizeof(smltr_data_t) - sizeof( long), 0))
-	{
-		perror( "msgsnd() 실패");
+  if (-1 == msgsnd(msqid, &req_data, sizeof(smltr_data_t) - sizeof(long), 0)) {
+    perror("msgsnd() 실패");
     perror("get_value_from_SMLTR 실패 ??");
-		exit( 1);
-	}
+    exit(1);
+  }
 
-	if (-1 == msgrcv(msqid, &res_data, sizeof(smltr_data_t) - sizeof(long), 1, 0))
-	{
-		perror("msgrcv() 실패\n");
-	}
-	ret = res_data.value;
+  if (-1 ==
+      msgrcv(msqid, &res_data, sizeof(smltr_data_t) - sizeof(long), 1, 0)) {
+    perror("msgrcv() 실패\n");
+  }
+  ret = res_data.value;
 
-    //printf("\t\t communicate with smltr, sensor_num : %d, ret = %d\n", sensor_n, ret);
-	return ret;
+  // printf("\t\t communicate with smltr, sensor_num : %d, ret = %d\n",
+  // sensor_n, ret);
+  return ret;
 }
 /**
- * @brief PSU WATT FAN 등 다양한 센서값을 읽는 함수 
+ * @brief PSU WATT FAN 등 다양한 센서값을 읽는 함수
  * @param value 전달할 데이터
  * @param fru fru 센서 정보
  * @param sensor_num fru 구역내 센서 값
- * @bug tacho 만 읽는 FAN CPU TEMP같은 센서값은 read_??_value를 통해 값을 얻어와야 함 임시로구현
+ * @bug tacho 만 읽는 FAN CPU TEMP같은 센서값은 read_??_value를 통해 값을
+ * 얻어와야 함 임시로구현
  * @author 박기철
  */
 int lightning_sensor_read(uint8_t fru, uint8_t sensor_num, int *value) {
-    int ret = 0;
-    int tmp = 0;
-    //pthread_mutex_lock(&m_sensor);
-    // log(info) << "[lightning_sensor_read..] sensor_num : " << (int)sensor_num << ", fru_num : " << (int)fru;
-    //  cout<<"\t\t\t dy : sensor_num ="<<(int)sensor_num<<endl;
-    //  cout<<"\t\t\t dy : fru_num ="<<(int)fru<<endl;
-    switch (fru) {
-        case FRU_PEB:
-            switch(sensor_num) {
-                case PEB_SENSOR_ADC_P12V:
-                    ret = read_adc_value(ADC_PIN0, ADC_VALUE, (int*) value);
-                break;
-                case PEB_SENSOR_ADC_P3V3_AUX :
-                    ret = read_adc_value(ADC_PIN1, ADC_VALUE, (int*) value);
-                break;
-                case PEB_SENSOR_ADC_P1V0_STBY :
-                    ret = read_adc_value(ADC_PIN2, ADC_VALUE, (int*) value);
-                break;
-                case PEB_SENSOR_ADC_P1V05_PCH_AUX  :
-                    ret = read_adc_value(ADC_PIN3, ADC_VALUE, (int*) value);
-                break;
-                case PEB_SENSOR_ADC_P12V_AUX :
-                    ret = read_adc_value(ADC_PIN4, ADC_VALUE, (int*) value);
-                break;
-                case PEB_SENSOR_ADC_P1V8_PCH_AUX :
-                    ret = read_adc_value(ADC_PIN5, ADC_VALUE, (int*) value);
-                break;
-                case PEB_SENSOR_ADC_P3V0_BAT  :
-                    ret = read_adc_value(ADC_PIN6, ADC_VALUE, (int*) value);
-                break;
-                case PEB_SENSOR_ADC_P1V7_CPU0 : 
-                    ret = read_adc_value(ADC_PIN7, ADC_VALUE, (int*) value);
-                break;
-                case PEB_SENSOR_ADC_P1V7_CPU1 :
-                    ret = read_adc_value(ADC_PIN8, ADC_VALUE, (int*) value);
-                break;
-                case PEB_SENSOR_ADC_P1V2_ABC :
-                    ret = read_adc_value(ADC_PIN9, ADC_VALUE, (int*) value);
-                break;
-                case PEB_SENSOR_ADC_P1V2_DEF :
-                    ret = read_adc_value(ADC_PIN10, ADC_VALUE, (int*) value);
-                break;
-                case PEB_SENSOR_ADC_P1V2_GHJ :
-                    ret = read_adc_value(ADC_PIN11, ADC_VALUE, (int*) value);
-                break;
-                case PEB_SENSOR_ADC_P1V2_KLM :
-                    ret = read_adc_value(ADC_PIN12, ADC_VALUE, (int*) value);
-                break;
-                case PEB_SENSOR_ADC_P1V0_CPU0 :
-                    ret = read_adc_value(ADC_PIN13, ADC_VALUE, (int*) value);
-                break;
-                case PEB_SENSOR_ADC_P1V0_CPU1 :
-                    ret =  read_adc_value(ADC_PIN14, ADC_VALUE, (int*) value);
-                break;
-                default:
-                    ret = -1;
-                break;
-            }
-        break;
+  int ret = 0;
+  int tmp = 0;
+  switch (fru) {
+  case FRU_PEB:
+    switch (sensor_num) {
+    case PEB_SENSOR_ADC_P12V_PSU1:
+      ret = read_adc_value_KTNF(ADC_PIN0, ADC_VALUE, (int *)value);
+      break;
+    case PEB_SENSOR_ADC_P12V_PSU2:
+      ret = read_adc_value_KTNF(ADC_PIN1, ADC_VALUE, (int *)value);
+      break;
+    case PEB_SENSOR_ADC_P3V3:
+      ret = read_adc_value_KTNF(ADC_PIN2, ADC_VALUE, (int *)value);
+      break;
+    case PEB_SENSOR_ADC_P5V:
+      ret = read_adc_value_KTNF(ADC_PIN3, ADC_VALUE, (int *)value);
+      break;
+    case PEB_SENSOR_ADC_PVNN_PCH:
+      ret = read_adc_value_KTNF(ADC_PIN4, ADC_VALUE, (int *)value);
+      break;
+    case PEB_SENSOR_ADC_P1V05:
+      ret = read_adc_value_KTNF(ADC_PIN5, ADC_VALUE, (int *)value);
+      break;
+    case PEB_SENSOR_ADC_P1V8:
+      ret = read_adc_value_KTNF(ADC_PIN6, ADC_VALUE, (int *)value);
+      break;
+    case PEB_SENSOR_ADC_BAT:
+      ret = read_adc_value_KTNF(ADC_PIN7, ADC_VALUE, (int *)value);
+      break;
+    case PEB_SENSOR_ADC_PVCCIN:
+      ret = read_adc_value_KTNF(ADC_PIN8, ADC_VALUE, (int *)value);
+      break;
+    case PEB_SENSOR_ADC_PVNN_PCH_CPU0:
+      ret = read_adc_value_KTNF(ADC_PIN9, ADC_VALUE, (int *)value);
+      break;
+    case PEB_SENSOR_ADC_P1V8_NACDELAY:
+      ret = read_adc_value_KTNF(ADC_PIN10, ADC_VALUE, (int *)value);
+      break;
+    case PEB_SENSOR_ADC_P1V2_VDDQ:
+      ret = read_adc_value_KTNF(ADC_PIN11, ADC_VALUE, (int *)value);
+      break;
+    case PEB_SENSOR_ADC_PVNN_NAC:
+      ret = read_adc_value_KTNF(ADC_PIN12, ADC_VALUE, (int *)value);
+      break;
+    case PEB_SENSOR_ADC_P1V05_NAC:
+      ret = read_adc_value_KTNF(ADC_PIN13, ADC_VALUE, (int *)value);
+      break;
+    case PEB_SENSOR_ADC_PVPP:
+      ret = read_adc_value_KTNF(ADC_PIN14, ADC_VALUE, (int *)value);
+      break;
+    case PEB_SENSOR_ADC_PVTT:
+      ret = read_adc_value_KTNF(ADC_PIN15, ADC_VALUE, (int *)value);
+      break;
 
-        case FRU_PDPB:
-            switch(sensor_num) {
-                case PDPB_SENSOR_TEMP_CPU1_FRONT :
-                    ret = read_tmp75_temp_value(PDPB_TMP75_U47_DEVICE, (int *) value);
-                    //cout<<"PDPB_SENSOR_TEMP_CPU1_FRONT"<<endl;
-                    //ret = read_temp_value(I2C_DEV_PDPB, PDPB_TMP75_U70 , LOCAL_SENSOR, (uint32_t*) value);
-                break;
-                case PDPB_SENSOR_TEMP_LEFT_REAR :
-                    ret = read_tmp75_temp_value(PDPB_TMP75_U48_DEVICE, (int *) value);
-                    //cout<<"PDPB_SENSOR_TEMP_LEFT_REAR"<<endl;
-                    //ret = read_temp_value(I2C_DEV_PDPB, PDPB_TMP75_U71 , LOCAL_SENSOR, (uint32_t*) value);
-                break;
-                case PDPB_SENSOR_TEMP_NEAR_BMC :
-                    ret = read_tmp75_temp_value(PDPB_TMP75_U49_DEVICE, (int *) value);//read_temp_value(I2C_DEV_PDPB, PDPB_TMP75_U72 , LOCAL_SENSOR, (uint32_t*) value);
-                break;
-                case PDPB_SENSOR_TEMP_NEAR_CPU0 :
-                    ret = read_tmp75_temp_value(PDPB_TMP75_U51_DEVICE, (int *) value);//read_temp_value(I2C_DEV_PDPB, PDPB_TMP75_U73 , LOCAL_SENSOR, (uint32_t*) value);
-                break;
-                case PDPB_SENSOR_TEMP_RIGHT_REAR :
-                    ret = read_tmp75_temp_value(PDPB_TMP75_U52_DEVICE, (int *) value);//read_temp_value(I2C_DEV_PDPB, PDPB_TMP75_U69 , LOCAL_SENSOR, (uint32_t*) value);
-                break;
-                case PDPB_SENSOR_TEMP_CPU1_FRONT2 :
-                    ret = read_tmp75_temp_value(PDPB_TMP75_U53_DEVICE, (int *) value);//read_temp_value(I2C_DEV_PDPB, PDPB_TMP75_U205 , LOCAL_SENSOR, (uint32_t*) value);
-                break;
-                case PDPB_SENSOR_TEMP_CPU0:
-                    tmp = get_value_from_SMLTR(sensor_num);
-                    cout <<"lightning_sensor_read PDPB_SENSOR_TEMP_CPU0"<<tmp<<endl;
-                    if (tmp != 0xff)//(temp_data[0] != 0xff)
-                        *value = g_Tmax - tmp;//temp_data[0];
-                    else
-                        *value = 0;
-                    ret = 1;
-                break;
-                case PDPB_SENSOR_TEMP_CPU1:
-                    tmp = get_value_from_SMLTR(sensor_num);
-                    if(tmp != 0xff)//(temp_data[1] != 0xff)
-                        *value = g_Tmax - tmp;//temp_data[1];
-                    else
-                        *value = 0;
-                    ret = 1;
-                break;
-                case PDPB_SENSOR_TEMP_CPU0_CH0_DIMM0:
-                    *value = get_value_from_SMLTR(sensor_num);//temp_data[2];
-                    ret = 1;
-                break;
-                case PDPB_SENSOR_TEMP_CPU0_CH0_DIMM1:
-                    *value = get_value_from_SMLTR(sensor_num);//temp_data[3];
-                    ret = 1;
-                break;
-                case PDPB_SENSOR_TEMP_CPU0_CH0_DIMM2:
-                    *value = get_value_from_SMLTR(sensor_num);//temp_data[4];
-                    ret = 1;
-                break;
-                case PDPB_SENSOR_TEMP_CPU0_CH1_DIMM0:
-                    *value = get_value_from_SMLTR(sensor_num);//temp_data[5];
-                    ret = 1;
-                break;
-                case PDPB_SENSOR_TEMP_CPU0_CH1_DIMM1:
-                    *value = get_value_from_SMLTR(sensor_num);//temp_data[6];
-                    ret = 1;
-                break;
-                case PDPB_SENSOR_TEMP_CPU0_CH1_DIMM2:
-                    *value = get_value_from_SMLTR(sensor_num);//temp_data[7];
-                    ret = 1;
-                break;
-                case PDPB_SENSOR_TEMP_CPU0_CH2_DIMM0:
-                    *value = get_value_from_SMLTR(sensor_num);//temp_data[8];
-                    ret = 1;
-                break;
-                case PDPB_SENSOR_TEMP_CPU0_CH2_DIMM1:
-                    *value = get_value_from_SMLTR(sensor_num);//temp_data[9];
-                    ret = 1;
-                break;
-                case PDPB_SENSOR_TEMP_CPU0_CH2_DIMM2:
-                    *value = get_value_from_SMLTR(sensor_num);//temp_data[10];
-                    ret = 1;
-                break;
-                case PDPB_SENSOR_TEMP_CPU0_CH3_DIMM0:
-                    *value = get_value_from_SMLTR(sensor_num);//temp_data[11];
-                    ret = 1;
-                break;
-                case PDPB_SENSOR_TEMP_CPU0_CH3_DIMM1:
-                    *value = get_value_from_SMLTR(sensor_num);//temp_data[12];
-                    ret = 1;
-                break;
-                case PDPB_SENSOR_TEMP_CPU0_CH3_DIMM2:
-                    *value = get_value_from_SMLTR(sensor_num);//temp_data[13];
-                    ret = 1;
-                break;
-                case PDPB_SENSOR_TEMP_CPU1_CH0_DIMM0:
-                    *value = get_value_from_SMLTR(sensor_num);//temp_data[14];
-                    ret = 1;
-                break;
-                case PDPB_SENSOR_TEMP_CPU1_CH0_DIMM1:
-                    *value = get_value_from_SMLTR(sensor_num);//temp_data[15];
-                    ret = 1;
-                break;
-                case PDPB_SENSOR_TEMP_CPU1_CH0_DIMM2:
-                    *value = get_value_from_SMLTR(sensor_num);//temp_data[16];
-                    ret = 1;
-                break;
-                case PDPB_SENSOR_TEMP_CPU1_CH1_DIMM0:
-                    *value = get_value_from_SMLTR(sensor_num);//temp_data[17];
-                    ret = 1;
-                break;
-                case PDPB_SENSOR_TEMP_CPU1_CH1_DIMM1:
-                    *value = get_value_from_SMLTR(sensor_num);//temp_data[18];
-                    ret = 1;
-                break;
-                case PDPB_SENSOR_TEMP_CPU1_CH1_DIMM2:
-                    *value = get_value_from_SMLTR(sensor_num);//temp_data[19];
-                    ret = 1;
-                break;
-                case PDPB_SENSOR_TEMP_CPU1_CH2_DIMM0:
-                    *value = get_value_from_SMLTR(sensor_num);//temp_data[20];
-                    ret = 1;
-                break;
-                case PDPB_SENSOR_TEMP_CPU1_CH2_DIMM1:
-                    *value = get_value_from_SMLTR(sensor_num);//temp_data[21];
-                    ret = 1;
-                break;
-                case PDPB_SENSOR_TEMP_CPU1_CH2_DIMM2:
-                    *value = get_value_from_SMLTR(sensor_num);//temp_data[22];
-                    ret = 1;
-                break;
-                case PDPB_SENSOR_TEMP_CPU1_CH3_DIMM0:
-                    *value = get_value_from_SMLTR(sensor_num);//temp_data[23];
-                    ret = 1;
-                break;
-                case PDPB_SENSOR_TEMP_CPU1_CH3_DIMM1:
-                    *value = get_value_from_SMLTR(sensor_num);//temp_data[24];
-                    ret = 1;
-                break;
-                case PDPB_SENSOR_TEMP_CPU1_CH3_DIMM2:
-                    *value = get_value_from_SMLTR(sensor_num);//temp_data[25];
-                    ret = 1;
-                break;
-                case PDPB_SENSOR_LEFT_REAR_TEMP:
-                    ret = read_tmp75_temp_value(PDPB_TMP75_U47_DEVICE, (int*) value);
-                break;
-                case PDPB_SENSOR_LEFT_FRONT_TEMP:
-                    ret = read_tmp75_temp_value(PDPB_TMP75_U49_DEVICE, (int*) value);
-                break;
-                case PDPB_SENSOR_RIGHT_REAR_TEMP:
-                    ret = read_tmp75_temp_value(PDPB_TMP75_U48_DEVICE, (int*) value);
-                break;
-                case PDPB_SENSOR_RIGHT_FRONT_TEMP:
-                    ret = read_tmp75_temp_value(PDPB_TMP75_U51_DEVICE, (int*) value);
-                break;
-                default:
-                    ret= -1;
-                break;
-            }
-        break;
-        case FRU_NVA:
-            switch(sensor_num){
-                case NVA_SENSOR_PSU1_TEMP:
-                    //cout<<("lightning_sensor_read: %s %02X %02X",I2C_PSU_DEV_NVA,NVA_PSU_1,NVA_PSU_TEMP);
-                    ret = read_tmp75_temp_value(PDPB_TMP75_PSU1_DEVICE, (int *) value);//read_psu_value(I2C_PSU_DEV_NVA, NVA_PSU_1, NVA_PSU_TEMP, (int*) value);	  
-                break;
-                case NVA_SENSOR_PSU2_TEMP:
-                    //cout<<("lightning_sensor_read: %s %02X %02X",I2C_PSU_DEV_NVA,NVA_PSU_2,NVA_PSU_TEMP);
-                    ret = read_tmp75_temp_value(PDPB_TMP75_PSU2_DEVICE, (int *) value);//read_psu_value(I2C_PSU_DEV_NVA, NVA_PSU_2, NVA_PSU_TEMP, (int*) value);
-                break;
-                case NVA_SENSOR_PSU1_TEMP2:
-                    cout<<("lightning_sensor_read: %s %02X %02X",I2C_PSU_DEV_NVA,NVA_PSU_1,NVA_PSU_TEMP2);
-                    ret = read_psu_value(I2C_PSU_DEV_NVA, NVA_PSU_1, NVA_PSU_TEMP, (int*) value);
-                break;
-                case NVA_SENSOR_PSU2_TEMP2:
-                    cout<<("lightning_sensor_read: %s %02X %02X",I2C_PSU_DEV_NVA,NVA_PSU_2,NVA_PSU_TEMP2);
-                    ret = read_psu_value(I2C_PSU_DEV_NVA, NVA_PSU_2, NVA_PSU_TEMP, (int*) value);
-                break;
-                case NVA_SENSOR_PSU1_FAN1:
-                    cout<<("lightning_sensor_read: %s %02X %02X",I2C_PSU_DEV_NVA,NVA_PSU_1,NVA_PSU_FAN1);
-                    *value = tacho_data[6];///100;//ret = read_psu_value(I2C_PSU_DEV_NVA, NVA_PSU_1, NVA_PSU_FAN1, (int*) value);
-                break;
-            
-                case NVA_SENSOR_PSU2_FAN1:
-                    //cout<<("lightning_sensor_read: %s %02X %02X",I2C_PSU_DEV_NVA,NVA_PSU_2,NVA_PSU_FAN1);
-                    //*value = tacho_data[7];///100;//ret = read_psu_value(I2C_PSU_DEV_NVA, NVA_PSU_2, NVA_PSU_FAN1, (int*) value);
-                break;
-                case NVA_SENSOR_PSU1_WATT:
-                    cout<<("NVA_SENSOR_PSU1_WATT read: %s %02X %02X",I2C_PSU_DEV_NVA,NVA_PSU_1,NVA_PSU_WATT);
-                    *value = tacho_data[8];
-                    //ret = read_psu_value(I2C_PSU_DEV_NVA, NVA_PSU_1, NVA_PSU_WATT, (int*) value);
-                    
-                break;
-                case NVA_SENSOR_PSU2_WATT:
-                    cout<<("NVA_SENSOR_PSU2_WATT read: %s %02X %02X",I2C_PSU_DEV_NVA,NVA_PSU_2,NVA_PSU_WATT);
-                    *value = tacho_data[9]; 
-                    //ret = read_psu_value(I2C_PSU_DEV_NVA, NVA_PSU_2, NVA_PSU_WATT, (int*) value);
-                break;
-                case NVA_SENSOR_BP_FAN1:
-                    *value = tacho_data[0];///100;
-                    //cout<<("lightning_sensor_read:" );
-                break;
-                case NVA_SENSOR_BP_FAN2:
-                    *value = tacho_data[1];///100;
-                    //cout<<("lightning_sensor_read:" );
-                break;
-                case NVA_SENSOR_BP_FAN3:
-                    *value = tacho_data[2];///100;
-                    //cout<<("lightning_sensor_read:" );
-                break;
-                case NVA_SENSOR_BP_FAN4:
-                    *value = tacho_data[3];///100;
-                    //cout<<("lightning_sensor_read:" );
-                break;
-                case NVA_SENSOR_BP_FAN5:
-                    *value = tacho_data[4];///100;
-                    //cout<<("lightning_sensor_read:" );
-                break;
-                case NVA_SENSOR_BP_FAN6:
-                    *value = tacho_data[5];///100;
-                    //cout<<("lightning_sensor_read:" );
-                break;
-            }	    
-        break;
+    default:
+      ret = -1;
+      break;
     }
-    //pthread_mutex_unlock(&m_sensor);
-    return ret;
- }
+    break;
+
+  case FRU_PDPB:
+    switch (sensor_num) {
+    case PDPB_SENSOR_TEMP_REAR_RIGHT:
+      ret = read_temp_value(I2C_DEV_PDPB, PDPB_REAR_RIGHT, LOCAL_SENSOR,
+                            (uint32_t *)value);
+      // cout << "PDPB_REAR_RIGHT value=" << *value << endl;
+      break;
+    case PDPB_SENSOR_TEMP_CPU_AMBIENT:
+      ret = read_temp_value(I2C_DEV_PDPB, PDPB_CPU_AMBIENT, LOCAL_SENSOR,
+                            (uint32_t *)value);
+      // cout << "PDPB_CPU_AMBIENT value=" << *value << endl;
+      break;
+    case PDPB_SENSOR_TEMP_FRONT_RIGHT:
+      ret = read_temp_value(I2C_DEV_PDPB, PDPB_FRONT_RIGHT, LOCAL_SENSOR,
+                            (uint32_t *)value);
+      // cout << "PDPB_FRONT_RIGHT value=" << *value << endl;
+      break;
+    case PDPB_SENSOR_TEMP_PCIE_AMBIENT:
+      ret = read_temp_value(I2C_DEV_PDPB, PDPB_PCIE_AMBIENT, LOCAL_SENSOR,
+                            (uint32_t *)value);
+      // cout << "PDPB_PCIE_AMBIENT value=" << *value << endl;
+      break;
+    case PDPB_SENSOR_TEMP_FRONT_LEFT:
+      ret = read_temp_value(I2C_DEV_PDPB, PDPB_FRONT_LEFT, LOCAL_SENSOR,
+                            (uint32_t *)value);
+      // cout << "PDPB_FRONT_LEFT value=" << *value << endl;
+      break;
+    case PDPB_SENSOR_TEMP_CPU0:
+      // tmp = get_value_from_SMLTR(sensor_num);
+      tmp = temp_data[0];
+      if (tmp != 0xff)         //(temp_data[0] != 0xff)
+        *value = g_Tmax - tmp; // temp_data[0];
+      else
+        *value = 0;
+      ret = 1;
+      break;
+    case PDPB_SENSOR_TEMP_CPU1:
+      // tmp = get_value_from_SMLTR(sensor_num);
+      tmp = temp_data[1];
+      if (tmp != 0xff)         //(temp_data[1] != 0xff)
+        *value = g_Tmax - tmp; // temp_data[1];
+      else
+        *value = 0;
+      ret = 1;
+      break;
+    case PDPB_SENSOR_TEMP_CPU0_CH0_DIMM0:
+      //*value = get_value_from_SMLTR(sensor_num); // temp_data[2];
+      ret = 1;
+      break;
+    case PDPB_SENSOR_TEMP_CPU0_CH0_DIMM1:
+      //*value = get_value_from_SMLTR(sensor_num); // temp_data[3];
+      ret = 1;
+      break;
+    case PDPB_SENSOR_TEMP_CPU0_CH0_DIMM2:
+      //*value = get_value_from_SMLTR(sensor_num); // temp_data[4];
+      ret = 1;
+      break;
+    case PDPB_SENSOR_TEMP_CPU0_CH1_DIMM0:
+      //*value = get_value_from_SMLTR(sensor_num); // temp_data[5];
+      ret = 1;
+      break;
+    case PDPB_SENSOR_TEMP_CPU0_CH1_DIMM1:
+      //*value = get_value_from_SMLTR(sensor_num); // temp_data[6];
+      ret = 1;
+      break;
+    case PDPB_SENSOR_TEMP_CPU0_CH1_DIMM2:
+      //*value = get_value_from_SMLTR(sensor_num); // temp_data[7];
+      ret = 1;
+      break;
+    case PDPB_SENSOR_TEMP_CPU0_CH2_DIMM0:
+      //*value = get_value_from_SMLTR(sensor_num); // temp_data[8];
+      ret = 1;
+      break;
+    case PDPB_SENSOR_TEMP_CPU0_CH2_DIMM1:
+      //*value = get_value_from_SMLTR(sensor_num); // temp_data[9];
+      ret = 1;
+      break;
+    case PDPB_SENSOR_TEMP_CPU0_CH2_DIMM2:
+      //*value = get_value_from_SMLTR(sensor_num); // temp_data[10];
+      ret = 1;
+      break;
+    case PDPB_SENSOR_TEMP_CPU0_CH3_DIMM0:
+      //*value = get_value_from_SMLTR(sensor_num); // temp_data[11];
+      ret = 1;
+      break;
+    case PDPB_SENSOR_TEMP_CPU0_CH3_DIMM1:
+      //*value = get_value_from_SMLTR(sensor_num); // temp_data[12];
+      ret = 1;
+      break;
+    case PDPB_SENSOR_TEMP_CPU0_CH3_DIMM2:
+      //*value = get_value_from_SMLTR(sensor_num); // temp_data[13];
+      ret = 1;
+      break;
+    case PDPB_SENSOR_TEMP_CPU1_CH0_DIMM0:
+      //*value = get_value_from_SMLTR(sensor_num); // temp_data[14];
+      ret = 1;
+      break;
+    case PDPB_SENSOR_TEMP_CPU1_CH0_DIMM1:
+      //*value = get_value_from_SMLTR(sensor_num); // temp_data[15];
+      ret = 1;
+      break;
+    case PDPB_SENSOR_TEMP_CPU1_CH0_DIMM2:
+      //*value = get_value_from_SMLTR(sensor_num); // temp_data[16];
+      ret = 1;
+      break;
+    case PDPB_SENSOR_TEMP_CPU1_CH1_DIMM0:
+      //*value = get_value_from_SMLTR(sensor_num); // temp_data[17];
+      ret = 1;
+      break;
+    case PDPB_SENSOR_TEMP_CPU1_CH1_DIMM1:
+      //*value = get_value_from_SMLTR(sensor_num); // temp_data[18];
+      ret = 1;
+      break;
+    case PDPB_SENSOR_TEMP_CPU1_CH1_DIMM2:
+      //*value = get_value_from_SMLTR(sensor_num); // temp_data[19];
+      ret = 1;
+      break;
+    case PDPB_SENSOR_TEMP_CPU1_CH2_DIMM0:
+      //*value = get_value_from_SMLTR(sensor_num); // temp_data[20];
+      ret = 1;
+      break;
+    case PDPB_SENSOR_TEMP_CPU1_CH2_DIMM1:
+      //*value = get_value_from_SMLTR(sensor_num); // temp_data[21];
+      ret = 1;
+      break;
+    case PDPB_SENSOR_TEMP_CPU1_CH2_DIMM2:
+      //*value = get_value_from_SMLTR(sensor_num); // temp_data[22];
+      ret = 1;
+      break;
+    case PDPB_SENSOR_TEMP_CPU1_CH3_DIMM0:
+      //*value = get_value_from_SMLTR(sensor_num); // temp_data[23];
+      ret = 1;
+      break;
+    case PDPB_SENSOR_TEMP_CPU1_CH3_DIMM1:
+      //*value = get_value_from_SMLTR(sensor_num); // temp_data[24];
+      ret = 1;
+      break;
+    case PDPB_SENSOR_TEMP_CPU1_CH3_DIMM2:
+      //*value = get_value_from_SMLTR(sensor_num); // temp_data[25];
+      ret = 1;
+      break;
+    default:
+      ret = -1;
+      break;
+    }
+    break;
+  case FRU_NVA:
+    switch (sensor_num) {
+    // case NVA_SENSOR_PSU1_TEMP:
+    //   // cout<<("lightning_sensor_read: %s %02X
+    //   // %02X",I2C_PSU_DEV_NVA,NVA_PSU_1,NVA_PSU_TEMP);
+    //   ret = read_tmp75_temp_value(
+    //       // PDPB_TMP75_PSU1_DEVICE,
+    //       // (int *)value);
+    //   break;
+    // case NVA_SENSOR_PSU2_TEMP:
+    //   // cout<<("lightning_sensor_read: %s %02X
+    //   // %02X",I2C_PSU_DEV_NVA,NVA_PSU_2,NVA_PSU_TEMP);
+    //   // ret = read_tmp75_temp_value(
+    //   //     PDPB_TMP75_PSU2_DEVICE,
+    //   //     (int *)value);
+    // case NVA_SENSOR_PSU1_TEMP2:
+
+    //   break;
+    // case NVA_SENSOR_PSU2_TEMP2:
+    //   break;
+    // case NVA_SENSOR_PSU1_FAN1:
+    //   break;
+
+    // case NVA_SENSOR_PSU2_FAN1:
+    //   break;
+    // case NVA_SENSOR_PSU1_WATT:
+    //   *value = tacho_data[8];
+
+    //   break;
+    // case NVA_SENSOR_PSU2_WATT:
+    //   *value = tacho_data[9];
+    //   break;
+    case NVA_SYSTEM_FAN1:
+      cout << ("NVA_SENSOR_BP_FAN1 read: %d", tacho_data[0]);
+      *value = tacho_data[0];
+      break;
+    case NVA_SYSTEM_FAN2:
+      cout << ("NVA_SENSOR_BP_FAN1 read: %d", tacho_data[1]);
+      *value = tacho_data[1];
+      break;
+    case NVA_SYSTEM_FAN3:
+      cout << ("NVA_SENSOR_BP_FAN1 read: %d", tacho_data[2]);
+      *value = tacho_data[2];
+      break;
+    case NVA_SYSTEM_FAN4:
+      cout << ("NVA_SENSOR_BP_FAN1 read: %d", tacho_data[3]);
+      *value = tacho_data[3];
+      break;
+    case NVA_SYSTEM_FAN5:
+      cout << ("NVA_SENSOR_BP_FAN1 read: %d", tacho_data[4]);
+      *value = tacho_data[4];
+      break;
+    }
+    break;
+  }
+  // pthread_mutex_unlock(&m_sensor);
+  return ret;
+}
 /**
  * @brief smbus test
  * @bug 테스트단계 보드가없어 확인불가
  */
- int wiringPiI2CRead (int fd)
-{
-  union i2c_smbus_data data ;
+int wiringPiI2CRead(int fd) {
+  union i2c_smbus_data data;
 
-  if (i2c_smbus_access (fd, I2C_SMBUS_READ, 0, I2C_SMBUS_BYTE, &data))
-    return -1 ;
+  if (i2c_smbus_access(fd, I2C_SMBUS_READ, 0, I2C_SMBUS_BYTE, &data))
+    return -1;
   else
-    return data.byte & 0xFF ;
+    return data.byte & 0xFF;
 }
 /**
  * @brief smbus test reg 버전
  * @bug 테스트단계 보드가없어 확인불가
  */
-int wiringPiI2CReadReg8 (int fd, int reg)
-{
+int wiringPiI2CReadReg8(int fd, int reg) {
   union i2c_smbus_data data;
 
-  if (i2c_smbus_access (fd, I2C_SMBUS_READ, reg, I2C_SMBUS_BYTE_DATA, &data))
-    return -1 ;
+  if (i2c_smbus_access(fd, I2C_SMBUS_READ, reg, I2C_SMBUS_BYTE_DATA, &data))
+    return -1;
   else
-    return data.byte & 0xFF ;
+    return data.byte & 0xFF;
 }

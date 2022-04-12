@@ -36,7 +36,7 @@
 #define M_VAL_BASE 0
 #define M_TOLERANCE 2
 
-#define PEB_SENSOR_NUM_BASE PEB_SENSOR_ADC_P12V
+#define PEB_SENSOR_NUM_BASE PEB_SENSOR_ADC_P12V_PSU1
 
 #define P12V_VOUT_UNR_THRESHOLD 0xE4 // 14.4
 #define P12V_VOUT_UCR_THRESHOLD 0xDA // 13.8
@@ -44,6 +44,13 @@
 #define P12V_VOUT_LNC_THRESHOLD 0xAB // 10.8
 #define P12V_VOUT_LCR_THRESHOLD 0xA1 // 10.2
 #define P12V_VOUT_LNR_THRESHOLD 0x98 // 9.6
+
+#define P5V_VOUT_UNR_THRESHOLD  0xE6 // 3.98
+#define P5V_VOUT_UCR_THRESHOLD  0xDB // 3.8
+#define P5V_VOUT_UNC_THRESHOLD 0xD1 // 3.62
+#define P5V_VOUT_LNC_THRESHOLD 0xAB // 2.96
+#define P5V_VOUT_LCR_THRESHOLD 0xA2 // 2.8
+#define P5V_VOUT_LNR_THRESHOLD 0x99 // 2.66
 
 #define P3V3_VOUT_UNR_THRESHOLD 0xE6 // 3.98
 #define P3V3_VOUT_UCR_THRESHOLD 0xDB // 3.8
@@ -142,17 +149,17 @@
 #define PDPB_MB_LCR_THRESHOLD 0x2
 #define PDPB_MB_LNR_THRESHOLD 0x0
 
-#define PEB_SENSOR_COUNT 15
+#define PEB_SENSOR_COUNT 16
 #define PDPB_SENSOR_COUNT 31
-#define NVA_SENSOR_COUNT 12
+#define NVA_SENSOR_COUNT 5
 
 extern const float m_val_vol[PEB_SENSOR_COUNT];
 extern const float input_volt[PEB_SENSOR_COUNT];
 extern const float nomi[PEB_SENSOR_COUNT];
 extern const float volt[PEB_SENSOR_COUNT];
-extern  sensor_thresh_t peb_sensors[15];
-extern  sensor_thresh_t nva_sensors[12];
-extern  sensor_thresh_t pdpb_sensors[31];
+extern  sensor_thresh_t peb_sensors[PEB_SENSOR_COUNT];
+extern  sensor_thresh_t nva_sensors[NVA_SENSOR_COUNT];
+extern  sensor_thresh_t pdpb_sensors[PDPB_SENSOR_COUNT];
 // sensor_thresh_t fru_sensors[1] = {
 //     BMC_SLAVE_ADDR,0x00,0x00,0x0A,0x00,0x7F,0x02,SENSOR_TYPE_FRU,SENSOR_EVENT_READING_THRESHOLD,
 //     {SENSOR_EVzENT_ASSERTION_LS, SENSOR_EVENT_ASSERTION_MS},
