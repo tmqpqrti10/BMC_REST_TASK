@@ -1,41 +1,41 @@
-#ifndef APP_UNIQUE_NAME_HERE 
+#ifndef APP_UNIQUE_NAME_HERE
 #define APP_UNIQUE_NAME_HERE
 
-#include <string>
+#include <arpa/inet.h>
+#include <condition_variable>
+#include <cpprest/json.h>
+#include <ctime>
+#include <errno.h>
 #include <iostream>
-#include <vector>
-#include <uuid/uuid.h>
+#include <map>
+#include <mutex>
+#include <net/if.h>
+#include <net/route.h>
+#include <netinet/in.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
-#include <time.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <sys/un.h>
-#include <sys/time.h>
-#include <ctime>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <errno.h>
+#include <string>
 #include <sys/ioctl.h>
-#include <net/route.h>
-#include <net/if.h>
-#include <stdarg.h>
-#include <cpprest/json.h>
-#include <map>
+#include <sys/socket.h>
+#include <sys/time.h>
+#include <sys/types.h>
+#include <sys/un.h>
 #include <thread>
-#include <condition_variable>
-#include <mutex>
+#include <time.h>
+#include <unistd.h>
+#include <uuid/uuid.h>
+#include <vector>
 
 #include <boost/log/core.hpp>
-#include <boost/log/trivial.hpp>
 #include <boost/log/expressions.hpp>
 #include <boost/log/sinks/text_file_backend.hpp>
-#include <boost/log/utility/setup/file.hpp>
-#include <boost/log/utility/setup/common_attributes.hpp>
-#include <boost/log/sources/severity_logger.hpp>
 #include <boost/log/sources/record_ostream.hpp>
+#include <boost/log/sources/severity_logger.hpp>
+#include <boost/log/trivial.hpp>
+#include <boost/log/utility/setup/common_attributes.hpp>
+#include <boost/log/utility/setup/file.hpp>
 
 namespace logging = boost::log;
 namespace src = boost::log::sources;
@@ -82,7 +82,7 @@ using namespace std;
 // int lc_flag;
 // int l_interrupt;
 #define THRESH_NOT_AVAILABLE 0xDF
-#define BMC_SLAVE_ADDR 0x20
+#define BMC_SLAVE_ADDR 0x08
 #define SIZE_TIME_STAMP 4
 #define SENSOR_STR_SIZE 20
 #define secs_from_1970_1996 820454400
@@ -93,7 +93,8 @@ using namespace std;
 #define POLICY_FILE "/conf/ipmi/policy.bin"
 #define ALERT_JSON "/conf/ipmi/alert.json"
 
-#define tos32(val, bits) ((val & ((1 << ((bits)-1)))) ? (-((val) & (1 << ((bits)-1))) | (val)) : (val))
+#define tos32(val, bits)                                                       \
+  ((val & ((1 << ((bits)-1)))) ? (-((val) & (1 << ((bits)-1))) | (val)) : (val))
 #define __TO_R_EXP(bacc) (int32_t)(tos32(((bacc & 0xf0) >> 4), 4))
 #define __TO_B_EXP(bacc) (int32_t)(tos32((bacc & 0xf), 4))
 #define EVENT_FILTER_TABLE_ELEMS_MAX 0x7f
@@ -101,35 +102,33 @@ using namespace std;
 
 /**
  * @brief 로그레벨 : 비활성화
- * 
+ *
  */
 #define LOG_LVL_DISABLE 0
 /**
  * @brief 로그레벨 : Trace
- * 
+ *
  */
 #define LOG_LVL_TRACE 1
 /**
  * @brief 로그레벨 : Information
- * 
+ *
  */
 #define LOG_LVL_INFO 2
 /**
  * @brief 로그레벨 : Warning
- * 
+ *
  */
 #define LOG_LVL_WARNING 3
 /**
  * @brief 로그레벨 : All Information
- * 
+ *
  */
 #define LOG_LVL_ALL_INFO 4
 
-
-
 // /**
 //  * @brief Trace 로그 전처리기
-//  * 
+//  *
 //  */
 // #define LOG_TRACE(...)                                            \
 //   do                                                              \
@@ -142,7 +141,7 @@ using namespace std;
 
 // /**
 //  * @brief Information 로그 전처리기
-//  * 
+//  *
 //  */
 // #define LOG_INFORM(...)                                           \
 //   do                                                              \
@@ -155,7 +154,7 @@ using namespace std;
 
 // /**
 //  * @brief Warning 로그 전처리기
-//  * 
+//  *
 //  */
 // #define LOG_WARN(...)                                             \
 //   do                                                              \
@@ -168,7 +167,7 @@ using namespace std;
 
 // /**
 //  * @brief All Information 로그 전처리기
-//  * 
+//  *
 //  */
 // #define LOG_ALL_INFO(...)                                         \
 //   do                                                              \
@@ -185,46 +184,41 @@ using namespace std;
 #define SMLTR_POWER_RESET 0xB3
 #define SMLTR_SET_FAN 0xB4
 
-//SEL
+// SEL
 #define SEL_RECORDS_MAX 255
 #define SEL_ELEMS_MAX (SEL_RECORDS_MAX + 1)
 #define SEL_INDEX_MAX SEL_RECORDS_MAX
 
 /**
  * @brief REST 요청시 받은 데이터 및 명령어
- * 
+ *
  */
-struct rest_req_t
-{
+struct rest_req_t {
   uint8_t netfn_lun;
   uint8_t cmd;
   uint8_t data[128];
 };
 
-typedef struct
-{
+typedef struct {
   long data_type;
   uint8_t sensor_num;
   uint8_t value;
 } smltr_data_t;
 
-typedef struct
-{
+typedef struct {
   uint8_t netfn_lun;
   uint8_t cmd;
   uint8_t cc;
   uint8_t data[];
 } ipmi_res_t;
 
-typedef struct
-{
+typedef struct {
   uint8_t netfn_lun;
   uint8_t cmd;
   uint8_t data[];
 } ipmi_req_t;
 
-typedef struct
-{
+typedef struct {
   unsigned char owner;
   unsigned char lun;
   unsigned char sensor_num;
@@ -266,22 +260,17 @@ typedef struct
   char str[SENSOR_STR_SIZE];
 } sensor_thresh_t;
 
-class IpmiInterface
-{
+class IpmiInterface {
 public:
   uint8_t netfn;
   uint8_t cmd;
   uint8_t c_code;
   std::vector<uint8_t> data;
 
-  IpmiInterface()
-  {
-  }
+  IpmiInterface() {}
 };
-struct ipmi_rq
-{
-  struct
-  {
+struct ipmi_rq {
+  struct {
     uint8_t netfn : 6;
     uint8_t lun : 2;
     uint8_t cmd;
@@ -291,8 +280,7 @@ struct ipmi_rq
   } msg;
 };
 
-class IpmiEnvironment
-{
+class IpmiEnvironment {
 private:
 };
 
@@ -419,31 +407,27 @@ private:
 #define CMD_TRY_LOGIN 0xfe
 #define CMD_SHOW_MAIN 0xff
 
-typedef struct
-{
+typedef struct {
   long type;
   int next;
   int res_len;
   unsigned char data[35000];
-  //QSIZE
+  // QSIZE
 } msq_rsp_t;
 
-typedef struct
-{
+typedef struct {
   long type;
   int ccode;
 } kvm_msq_t;
-typedef struct
-{
+typedef struct {
   long type;
   int index;
-  //unsigned char data[MAX_IPMI_MSG_SIZE];
+  // unsigned char data[MAX_IPMI_MSG_SIZE];
   rest_req_t ipmi_msg;
 } msq_req_t;
 /////////////rest
 
-enum
-{
+enum {
   NETFN_CHASSIS_REQ = 0x00,
   NETFN_CHASSIS_RES,
   NETFN_BRIDGE_REQ,
@@ -468,8 +452,7 @@ enum
   NETFN_REST_RES = 0x44
 };
 
-enum
-{
+enum {
   CC_SUCCESS = 0x00,
   CC_INVALID_PARAM = 0x80,
   CC_SEL_ERASE_PROG = 0x81,
@@ -485,8 +468,9 @@ enum
 };
 
 /**
- * @brief 로그를 남길 경로와 prefix로 파일 이름을 설정하여 로그파일 정보를 설정하는 함수
- * 
+ * @brief 로그를 남길 경로와 prefix로 파일 이름을 설정하여 로그파일 정보를
+ * 설정하는 함수
+ *
  * @param dir 저장할 로그 파일 경로
  * @param prefix 저장할 로그 파일 prefix
  * @return int 성공시 0, 실패시 -1
@@ -494,7 +478,7 @@ enum
 int LOGsetInfo(const char *dir, const char *prefix);
 /**
  * @brief 로그 레벨을 설정하는 함수
- * 
+ *
  * @param log_lvl 설정할 로그레벨
  * LOG_LVL_DISABLE
  * LOG_LVL_TRACE
@@ -506,13 +490,13 @@ int LOGsetInfo(const char *dir, const char *prefix);
 int LogSetLevel(int log_lvl);
 /**
  * @brief 현재 로그 레벨을 확인하는 함수
- * 
+ *
  * @return int 현재 로그 레벨을 반환
  */
 int LogGetLevel(void);
 /**
  * @brief 로그 파일을 생성하는 함수
- * 
+ *
  * @param tml 현재 시간
  * @param src_file 로그파일 prefix
  * @return int 성공시 0, 실패시 -1
@@ -520,16 +504,17 @@ int LogGetLevel(void);
 static int LOGcreateFile(struct tm *tml, const char *src_file);
 /**
  * @brief 로그 파일에 내용을 기록하는 함수
- * 
+ *
  * @param log_type 로그 타입 (TRACE, INFO, WARNING, ALL_INFO)
  * @param src_file 로그를 기록할 파일명
  * @param func 로그를 호출한 함수명
  * @param line_no 라인 번호
  * @param fmt 로그 내용
- * @param ... 
+ * @param ...
  * @return int 성공시 기록한 문자 개수, 실패시 -1
  */
-int LOGlogging(char log_type, const char *src_file, const char *func, int line_no, const char *fmt, ...);
+int LOGlogging(char log_type, const char *src_file, const char *func,
+               int line_no, const char *fmt, ...);
 void delay(int millisec);
 void time_stamp_fill(uint8_t *ts);
 
@@ -537,94 +522,87 @@ void test_ipmi(void);
 
 /**
  * @brief REST WEB에서 POWER 사용량을 전달하기위한 구조체
- * 
+ *
  */
-typedef struct{
+typedef struct {
   int id;
   int watt;
   unsigned char dt[100];
 } power_usage_t;
 
-enum class Theshold_type
-{
-    lnc_low=0,
-    lnc_high,
-    lc_low,
-    lc_high,
-    lnr_low,
-    lnr_high,
-    unc_low,
-    unc_high,
-    uc_low,
-    uc_high,
-    unr_low,
-    unr_high,
-    
-    
+enum class Theshold_type {
+  lnc_low = 0,
+  lnc_high,
+  lc_low,
+  lc_high,
+  lnr_low,
+  lnr_high,
+  unc_low,
+  unc_high,
+  uc_low,
+  uc_high,
+  unr_low,
+  unr_high,
+
 };
-enum class Sensor_tpye
-{
-    reserved = 0,
-    Temperature = 1,
-    Voltage,
-    Current,
-    Fan,
-    PhysicalSecurity,
-    PlatformSecurity,
-    Processor,
-    PowerSupply,
-    PowerUnit,
-    CoolingDevice,
-    Other,
-    Memory,
-    DriveSlotBay,
-    POSTMemoryResize,
-    SystemFirmwares,
-    EventLoggingDisabled,
-    Watchdog1,
-    SystemEvent,
-    CriticalInterrupt,
-    Button,
-    ModuleBoard,
-    Microcontroller,
-    AddinCard,
-    Chassis,
-    ChipSet,
-    OtherFRU,
-    CableInterconnect,
-    Terminator,
-    SystemBootInitiated,
-    BootError,
-    OSBoot,
-    OSCriticalStop,
-    SlotConnector,
-    SystemACPIPowerState,
-    Watchdog2,
-    PlatformAlert,
-    EntityPresence,
-    MonitorASIC,
-    LAN,
-    ManagementSubsysHealth,
-    Battery,
-    SessionAudit,
-    VersionChange,
-    FRUState,
+enum class Sensor_tpye {
+  reserved = 0,
+  Temperature = 1,
+  Voltage,
+  Current,
+  Fan,
+  PhysicalSecurity,
+  PlatformSecurity,
+  Processor,
+  PowerSupply,
+  PowerUnit,
+  CoolingDevice,
+  Other,
+  Memory,
+  DriveSlotBay,
+  POSTMemoryResize,
+  SystemFirmwares,
+  EventLoggingDisabled,
+  Watchdog1,
+  SystemEvent,
+  CriticalInterrupt,
+  Button,
+  ModuleBoard,
+  Microcontroller,
+  AddinCard,
+  Chassis,
+  ChipSet,
+  OtherFRU,
+  CableInterconnect,
+  Terminator,
+  SystemBootInitiated,
+  BootError,
+  OSBoot,
+  OSCriticalStop,
+  SlotConnector,
+  SystemACPIPowerState,
+  Watchdog2,
+  PlatformAlert,
+  EntityPresence,
+  MonitorASIC,
+  LAN,
+  ManagementSubsysHealth,
+  Battery,
+  SessionAudit,
+  VersionChange,
+  FRUState,
 
 };
 
+/// fru
 
-
-///fru
-
-struct ipmi_fruid_info_t
-{
+struct ipmi_fruid_info_t {
   uint8_t size_lsb;
   uint8_t size_msb;
   uint8_t bytes_words;
 };
 
-struct fru_info_t
-{
+struct fru_info_t {
   string mfg;
   string prod;
   string serial;
@@ -633,11 +611,10 @@ struct fru_info_t
 
 /**
  * @brief FRU Board Information Descriptor
- * 
+ *
  */
 
-struct fru_board_info_t
-{
+struct fru_board_info_t {
   char *mfg_date[4];
   char *mfg[32];
   char *product[32];
@@ -647,10 +624,9 @@ struct fru_board_info_t
 
 /**
  * @brief FRU Product Information Descriptor
- * 
+ *
  */
-struct fru_product_info_t
-{
+struct fru_product_info_t {
   char *mfg[32];
   char *name[32];
   char *part_number[32];
@@ -661,11 +637,10 @@ struct fru_product_info_t
 
 /**
  * @brief FRU Chassis Information Descriptor
- * 
+ *
  */
 
-struct fru_chassis_info_t
-{
+struct fru_chassis_info_t {
   uint8_t type;
   char *part_number[32];
   char *serial[32];
@@ -673,10 +648,9 @@ struct fru_chassis_info_t
 
 /**
  * @brief FRU Header Descriptor
- * 
+ *
  */
-struct fru_header_t
-{
+struct fru_header_t {
   uint8_t id;
   uint8_t version;
   uint8_t internal;
@@ -690,8 +664,7 @@ struct fru_header_t
 /**
  *  @brief SEL header struct to keep track of SEL Log entries
  */
-struct sel_hdr
-{
+struct sel_hdr {
   int magic;            /// Magic number to check validity
   int version;          /// version number of this header
   int begin;            /// index to the begining of the log
@@ -700,18 +673,15 @@ struct sel_hdr
   std::time_t ts_erase; /// last erase time stamp
 };
 
-struct sel_msg_t
-{
+struct sel_msg_t {
   unsigned char msg[16];
 };
 
-struct sdr_rec_t
-{
+struct sdr_rec_t {
   unsigned char rec[64];
 };
 
-struct ss_t
-{
+struct ss_t {
   int web_enables;
   char web_port[6];
   int ssh_enables;
@@ -722,27 +692,23 @@ struct ss_t
   char kvm_port[6];
   char kvm_proxy_port[6];
 };
-struct kvm_service_t
-{
+struct kvm_service_t {
   int kvm_enables;
   char kvm_port[6];
   char kvm_proxy_port[6];
 };
 
-struct ssh_service_t
-{
+struct ssh_service_t {
   int ssh_enables;
   char ssh_port[6];
 };
 
-struct alert_servce_t
-{
+struct alert_servce_t {
   int alert_enables;
   char alert_port[6];
 };
 
-struct web_service_t
-{
+struct web_service_t {
   int web_enables;
   char web_port[6];
 };
@@ -792,20 +758,18 @@ struct web_service_t
 #define SENSOREV_LOWER_CRITICAL_THR_SETREAD_MASK (0x02)
 #define SENSOREV_LOWER_NONCRITICAL_THR_SETREAD_MASK (0x01)
 
-class Ipmisdr
-{
+class Ipmisdr {
 public:
   uint8_t sensor_num;
   uint8_t rec_id[2];
   uint8_t ver;
   uint8_t type;
   uint8_t len;
-  
+
   sensor_thresh_t rec;
 
 public:
-  Ipmisdr(int _rec_id, uint8_t _snum, sensor_thresh_t _rec)
-  {
+  Ipmisdr(int _rec_id, uint8_t _snum, sensor_thresh_t _rec) {
     this->sensor_num = _snum;
     this->rec_id[0] = _rec_id & 0xff;
     this->rec_id[1] = (_rec_id >> 8) & 0xff;
@@ -825,24 +789,17 @@ public:
   uint8_t sdr_get_analog_flag();
   void print_sensor_info();
   /**
-         * @brief 모든 샌서 정보를 가지고 있는 구조체 반환
-         * @details Ipmisdr이가지고있는 sensor_thresh_t -> rec 반환
-         */
-  sensor_thresh_t get_sensor_thresh_t()
-  {
-    return this->rec;
-  }
+   * @brief 모든 샌서 정보를 가지고 있는 구조체 반환
+   * @details Ipmisdr이가지고있는 sensor_thresh_t -> rec 반환
+   */
+  sensor_thresh_t get_sensor_thresh_t() { return this->rec; }
 };
 
-
-
-typedef struct
-{
+typedef struct {
   unsigned char ts[4];
 } time_stamp_t;
 
-struct sdr_hdr_t
-{
+struct sdr_hdr_t {
   int magic;             /// Magic number to check validity
   int version;           /// version number of this header
   int begin;             /// index to the first SDR entry
@@ -853,7 +810,7 @@ struct sdr_hdr_t
 
 /**
  * @brief BMC Watchdog Descriptor
- * 
+ *
  */
 
 /* Configuration file key works*/
@@ -864,8 +821,7 @@ struct sdr_hdr_t
 #define IPMI_PRETIMEOUTINTERRUPT "INT_Pretimeout"
 #define IPMI_ACTION "Action"
 #define IPMI_PIDFILE "Pidfile"
-typedef struct
-{
+typedef struct {
   unsigned char timer_use;
   unsigned char timer_actions;
   unsigned char pre_timeout;
@@ -895,7 +851,7 @@ typedef struct
 #define IPMI_ACTION "Action"
 #define IPMI_PIDFILE "Pidfile"
 
-//event 관련
+// event 관련
 
 #define PEF_FILTER_ENTRY_COUNT 2
 #define PEF_POLICY_ENTRY_COUNT 1
@@ -958,10 +914,9 @@ typedef struct
 #define PEF_POLICY_DESTINATION_MASK 0x0f
 #define PEF_POLICY_EVENT_SPECIFIC 0x80
 #define PEF_SYSTEM_GUID_USED_IN_PET 0x01
-#define PEB_SENSOR_NUM_BASE 0x24 //PEB_SENSOR_ADC_P12V
+#define PEB_SENSOR_NUM_BASE 0x24 // PEB_SENSOR_ADC_P12V
 
-typedef struct
-{
+typedef struct {
   uint8_t data1;
   uint8_t config;
   uint8_t action;
@@ -985,8 +940,7 @@ typedef struct
 } pef_table_entry_t;
 
 /// @brief SEL header struct to keep track of SEL Log entries
-typedef struct
-{
+typedef struct {
   int magic;             /// Magic number to check validity
   int version;           /// version number of this header
   int begin;             /// index to the begining of the log
@@ -995,10 +949,9 @@ typedef struct
   time_stamp_t ts_erase; /// last erase time stamp
 } sel_hdr_t;
 
-//event msage
+// event msage
 
-struct event_msg_t
-{
+struct event_msg_t {
   uint8_t gen_id;
   uint8_t evm_rev;
   uint8_t sensor_type;
@@ -1009,33 +962,30 @@ struct event_msg_t
 };
 
 ///////////////pef 관련
-struct pef_policy_entry
-{
+struct pef_policy_entry {
   uint8_t policy;
   uint8_t chan_dest;
   uint8_t alert_string_key;
 };
 
-struct pef_policy_table
-{
+struct pef_policy_table {
 #define PEF_POLICY_TABLE_ID_MASK 0x7f
   uint8_t data1;
   struct pef_policy_entry entry;
 };
 
-enum
-{
+enum {
   IPMI_SEL_INIT_ERASE = 0xAA,
   IPMI_SEL_ERASE_STAT = 0x00,
 };
-typedef enum
-{
+typedef enum {
   SEL_ERASE_IN_PROG = 0x00,
   SEL_ERASE_DONE = 0x01,
 } sel_erase_stat_t;
 
 /**
- * @brief 다음 index를 response의 data에 저장함. 마지막 index는 0xff로 마지막임을 알려줌
+ * @brief 다음 index를 response의 data에 저장함. 마지막 index는 0xff로
+ * 마지막임을 알려줌
  * @param unsigned char *data - 바로 response data에 작성하기 위한 인자
  * @return void
  */
@@ -1043,18 +993,18 @@ void plat_sel_last_rsv_id(unsigned char *data);
 int plat_sel_num_entries(void);
 uint8_t plat_lan_channel_selector(uint8_t net_priority);
 /**
-  * @brief SNMP Alert 정보를 초기화하는 함수 
-  * IPMI_LAN_ALERT_PATH / IPMI_LAN_ALERT_DEDI_PATH 파일이 존재하는 경우 파일 내용을 읽어 lan_config_t 구조체에 반영한다.\n
- * 파일이 없는 경우 NULL상태로 유지한다.
-  */
+ * @brief SNMP Alert 정보를 초기화하는 함수
+ * IPMI_LAN_ALERT_PATH / IPMI_LAN_ALERT_DEDI_PATH 파일이 존재하는 경우 파일
+ * 내용을 읽어 lan_config_t 구조체에 반영한다.\n 파일이 없는 경우 NULL상태로
+ * 유지한다.
+ */
 void plat_lan_alert_init();
 
 uint8_t parse_policy_set(uint8_t policy);
 
 #include <queue>
-class IpmiLogEvent
-{
-  public:
+class IpmiLogEvent {
+public:
   string event_path;
   string msg;
   string event_time;
@@ -1064,24 +1014,26 @@ class IpmiLogEvent
   string sensornumber;
   int index;
   IpmiLogEvent(){};
-  IpmiLogEvent(string _msg,string event_type, string _event_path,string severity="OK",string sensornumber="",vector<string> message_args=vector<string>())
-  {
+  IpmiLogEvent(string _msg, string event_type, string _event_path,
+               string severity = "OK", string sensornumber = "",
+               vector<string> message_args = vector<string>()) {
     this->msg = _msg;
     this->event_path = _event_path;
     this->event_time = currentDateTime();
-    this->event_path =event_type;
-    this->severity=severity;
-    this->sensornumber=sensornumber;
-    this->message_args=message_args;
+    this->event_path = event_type;
+    this->severity = severity;
+    this->sensornumber = sensornumber;
+    this->message_args = message_args;
   }
-  private:
-  const std::string currentDateTime(void)
-  {
+
+private:
+  const std::string currentDateTime(void) {
     time_t now = time(0); //현재 시간을 time_t 타입으로 저장
     struct tm tstruct;
     char buf[80];
     tstruct = *localtime(&now);
-    strftime(buf, sizeof(buf), "%Y-%m-%d.%X", &tstruct); // YYYY-MM-DD.HH:mm:ss 형태의 스트링
+    strftime(buf, sizeof(buf), "%Y-%m-%d.%X",
+             &tstruct); // YYYY-MM-DD.HH:mm:ss 형태의 스트링
     return buf;
   }
 };

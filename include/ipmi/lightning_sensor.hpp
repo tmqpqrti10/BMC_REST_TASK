@@ -46,10 +46,10 @@
  #define ADC_VALUE "in_voltage%d_raw"
  //tacho는 현재 ast2600a3 보드에 있지않음으로 읽히지 않음
  //#define TACHO_DIR "/root/sys/devices/platform/ast_pwm_tacho.0"//"/sys/devices/platform/ast_pwm_tacho.0"
+ #define PWM_DIR "/sys/devices/platform/ahb/ahb:apb/1e610000.pwm-tacho-controller/hwmon/hwmon0"
  #define TACHO_DIR "/sys/devices/platform/ahb/ahb:apb/1e610000.pwm-tacho-controller/hwmon/hwmon0"
- #define TACHO_VALUE "pwm%d"
-
- 
+ #define PWM_VALUE "pwm%d"
+ #define TACHO_VALUE "fan%d_input"
  #define UNIT_DIV 1000
  #define TPM75_TEMP_RESOLUTION 0.0625
  #define ADS1015_DEFAULT_CONFIG 0xe383
@@ -192,10 +192,10 @@ enum tmp75_nva_sensors {
     NVA_TMP75_4 = 0x4b,
 };
 
-enum psu_nva_sensors {
-    NVA_PSU_1 = 0x58,
-    NVA_PSU_2 = 0x59,
-};
+// enum psu_nva_sensors {
+//     NVA_PSU_1 = 0x58,
+//     NVA_PSU_2 = 0x59,
+// };
 
 enum psu_nva_regs{
     NVA_PSU_TEMP=0x8d,
@@ -252,14 +252,9 @@ int lightning_sensor_sdr_init(uint8_t fru, sensor_info_t *sinfo);
 
 void sensor_thresh_array_init();
 
-/**
- *@bug IPMB sensor는 구현되어있지않음 구현 요망
- */
+
 void get_ipmb_sensor(int id, unsigned char *response, unsigned char res_len);
 
-/**
- *@bug IPMB sensor는 구현되어있지않음 구현 요망
- */
 void get_ipmb_sensor1(int id, unsigned char *response, unsigned char res_len);
 
 int read_fan_value(int fanno,int *value);

@@ -151,7 +151,7 @@
 
 #define PEB_SENSOR_COUNT 16
 #define PDPB_SENSOR_COUNT 31
-#define NVA_SENSOR_COUNT 11
+#define NVA_SENSOR_COUNT 5
 
 extern const float m_val_vol[PEB_SENSOR_COUNT];
 extern const float input_volt[PEB_SENSOR_COUNT];

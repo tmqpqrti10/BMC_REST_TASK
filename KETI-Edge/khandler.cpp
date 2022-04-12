@@ -15,11 +15,11 @@
 
 #include <ipmi/dcmi.hpp>
 #include <ipmi/gpio.hpp>
+#include <ipmi/ipmb.hpp>
 #include <ipmi/lightning_sensor.hpp>
 #include <ipmi/sdr.hpp>
 unsigned int f_fan_error;
 #define ETH_COUNT 4
-
 
 extern Ipminetwork ipmiNetwork[ETH_COUNT];
 extern Dcmiconfiguration dcmiConfiguration;
@@ -142,6 +142,7 @@ int check_fan_status(int i) {
   ipmi_inprogress = 1;
   read_fan_value(i, &rpm);
   ipmi_inprogress = 0;
+  // cout << "fan" << i << "rpm:" << rpm << endl;
   if (rpm == 0) {
     f_fan_error &= ~(0x00000001 << i);
     return (ret);
@@ -207,8 +208,9 @@ void dcmi_power_limit_function() {
   bPowerGD = ipmiChassis.get_power_status();
   if (bPowerGD) {
     if ((dcmiConfiguration.power_reading_state >> 6) == 1) {
-      // log(info)<<"dcmi_power_limit_function step 1 ";
-      sensor_index = plat_find_sdr_index(NVA_SENSOR_PSU1_WATT);
+
+      // psu 연동필요
+      // sensor_index = plat_find_sdr_index(NVA_SENSOR_PSU1_WATT);
 
       if (sensor_index > 0) {
         psu1 = sdr_rec[sensor_index]
@@ -218,7 +220,9 @@ void dcmi_power_limit_function() {
         log(info) << "not find NVA_SENSOR_PSU1_WATT Sensor index";
       }
       // log(info)<<"dcmi_power_limit_function step 2";
-      sensor_index = plat_find_sdr_index(NVA_SENSOR_PSU2_WATT);
+      // psu 연동필요
+      // sensor_index = plat_find_sdr_index(NVA_SENSOR_PSU2_WATT);
+
       if (sensor_index > 0) {
         psu2 = sdr_rec[sensor_index]
                    .find(sensor_index)
@@ -297,21 +301,26 @@ void *timer_handler(void) {
         ipmiNetwork[i].plat_lan_changed(ipmiNetwork[i].chan);
       }
       for (int j = 0; j < 10; j++) {
-        cout<<"update fan rpm"<<endl;
         check_fan_status(j);
-        
       }
       // update_hw_status();
       dcmi_power_limit_function();
       // log(info)<<"timer_handler count="<<count;
       update_sensor_reading();
-      // log(info)<<"Update Sensorreading"<<count;
+      cout << "ipmb test cpu temp" << endl;
+      ipmb_get_cpu_temp();
       count = 0;
     }
     front_LED_blink(count++);
     sleep(1);
   }
 }
+void *ipmb_handler(void *bus_num) {
+  log(info) << "\n\n======ipmb_handler start =============";
+  ipmb_rx_handler(bus_num);
+  log(info) << "======ipmb_handler end =============\n\n";
+}
+
 void *lanplus_handler(void *data) {
   int sockfd = *((int *)data);
   int byte_recv = 0;

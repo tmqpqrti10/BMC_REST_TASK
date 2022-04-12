@@ -92,7 +92,7 @@ void *psu_handler(void) {
       log(info) << "psu_handler not open error : check_db";
     }
     // cout<<"psu database check"<<endl;
-    log(info)<<"psu_handler step 1";
+    log(info) << "psu_handler step 1";
 
     // cout<<"psu database end"<<endl;
     try {
@@ -101,7 +101,7 @@ void *psu_handler(void) {
       log(info) << "psu_handler not open error";
       return;
     }
-    log(info)<<"psu_handler step 2";
+    log(info) << "psu_handler step 2";
     min_cursor[0] = find_first_index(MIN_1, statement, db);
     // cout<<"psu database 1"<<endl;
     min_cursor[1] = find_first_index(MIN_2, statement, db);
@@ -113,17 +113,17 @@ void *psu_handler(void) {
     day_cursor[0] = find_first_index(DAY_1, statement, db);
     // cout<<"psu database5"<<endl;
     day_cursor[1] = find_first_index(DAY_2, statement, db);
-    log(info)<<"psu_handler step 3";
+    log(info) << "psu_handler step 3";
     // cout<<"psu database find_first_index..!"<<endl;
 
     sqlite3_close(db);
     sqlite3_finalize(statement);
-    log(info)<<"psu_handler step 4";
+    log(info) << "psu_handler step 4";
     // cout<<"psu database sqlite3_finalize..!"<<endl;
     while (1) {
-      log(info)<<"psu_handler step 5";
+      log(info) << "psu_handler step 5";
       DoStuff();
-      log(info)<<"psu_handler step 6";
+      log(info) << "psu_handler step 6";
       psu_delay(10000);
     }
   } catch (const std::exception &) {
@@ -138,7 +138,7 @@ int find_first_index(int flag, sqlite3_stmt *statement, sqlite3 *db) {
     struct tm *parseTime;
     int row_count, l, rc, t_max, i_max = 0;
     char query[500] = {0};
-    cout<<"find_first_index 1"<<endl;
+    // cout<<"find_first_index 1"<<endl;
     switch (flag) {
     case MIN_1:
       sprintf(query, "SELECT count(*) FROM last_min_1;");
@@ -171,16 +171,16 @@ int find_first_index(int flag, sqlite3_stmt *statement, sqlite3 *db) {
       sprintf(query, "SELECT dt FROM last_day_2;");
       break;
     }
-    cout<<"find_first_index 2 row_count"<<row_count<<endl;
+    // cout << "find_first_index 2 row_count" << row_count << endl;
     if (row_count != 0) {
       char db_datetime[row_count][100];
       struct tm tm_l[row_count];
       time_t time[row_count];
 
       try {
-        cout<<"sqlite3_prepare"<<endl;
+        cout << "sqlite3_prepare" << endl;
         sqlite3_prepare(db, query, -1, &statement, NULL);
-        cout<<"sqlite3_prepare end"<<endl;
+        cout << "sqlite3_prepare end" << endl;
         while (1) {
           rc = sqlite3_step(statement);
           if (SQLITE_ROW == rc) {
@@ -193,7 +193,7 @@ int find_first_index(int flag, sqlite3_stmt *statement, sqlite3 *db) {
         }
         sqlite3_finalize(statement);
       } catch (const std::exception &) {
-        cout << "find_first_index error: step1" << endl;
+        // cout << "find_first_index error: step1" << endl;
       }
 
       l = 0;
@@ -212,12 +212,12 @@ int find_first_index(int flag, sqlite3_stmt *statement, sqlite3 *db) {
         }
       }
     }
-    cout<<"find_first_index "<<row_count<<endl;
+    // cout << "find_first_index " << row_count << endl;
     return i_max + 1;
   }
 
   catch (const std::exception &e) {
-    cout << "find_first_index error" << endl;
+    // cout << "find_first_index error" << endl;
     return false;
   }
 }
@@ -275,14 +275,13 @@ void DoStuff(void) {
     log(info) << "psu_handler not open error";
     return;
   }
-  // cout<<"psu DoStuff sqlite3_open..!"<<endl;
+
   bPowerGD = ast_get_gpio_value(PCH_PWR_GOOD);
   log(debug) << "doStuff bPowerGD ==" << bool(bPowerGD);
-  // cout<<"psu DoStuff ast_get_gpio_value..!"<<endl;
-  lightning_sensor_read(
-      FRU_NVA, NVA_SENSOR_PSU1_WATT,
-      &power_watt[0]); // sdr_sensor_read(NVA_SENSOR_PSU1_TEMP);
-  lightning_sensor_read(FRU_NVA, NVA_SENSOR_PSU2_WATT, &power_watt[1]);
+  // lightning_sensor_read(
+  //    FRU_NVA, NVA_SENSOR_PSU1_WATT,
+  //    &power_watt[0]); // sdr_sensor_read(NVA_SENSOR_PSU1_TEMP);
+  // lightning_sensor_read(FRU_NVA, NVA_SENSOR_PSU2_WATT, &power_watt[1]);
   if (bPowerGD == 0) {
     if (power_watt[0] == 13)
       power_watt[0] = 0;
@@ -462,12 +461,12 @@ void DoStuff(void) {
 //
 
 int check_db_callback(void *NotUsed, int argc, char **argv, char **azColName) {
-  //log(info)<<"check_db_callback start=====";
+  // log(info)<<"check_db_callback start=====";
   if (argv[0] != NULL)
     table_check = atoi(argv[0]);
   else
     table_check = 0;
-  //log(info)<<"check_db_callback end=====";
+  // log(info)<<"check_db_callback end=====";
   return 0;
 }
 
@@ -476,7 +475,7 @@ void check_db() {
   char *zErrMsg;
   char query[500] = {0};
   sqlite3 *db;
-  //log(info)<<"check_db start =====";
+  // log(info)<<"check_db start =====";
   try {
     rc = sqlite3_open(POWER_USAGE_DB, &db);
   } catch (const std::exception &) {
@@ -548,5 +547,5 @@ void check_db() {
 
   sqlite3_close(db);
   sqlite3_free(zErrMsg);
-  //log(info)<<"check_db end =====";
+  // log(info)<<"check_db end =====";
 }

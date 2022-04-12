@@ -877,32 +877,6 @@ void init_sensor(Collection *sensor_collection, string _id)
         return;
     
     sensor = new Sensor(odata_id, _id);
-    /**
-     * @todo 여기에 sensor 일반멤버변수값 넣어주기
-     */
-            // this->id = "";
-        // this->reading_type = "Such as Temperature";
-        // this->reading_time = "Reading Time";
-        // this->reading = 30.6;
-
-        // this->reading_units = "C";
-        // this->reading_range_min = 0;
-        // this->reading_range_max = 70;
-        // this->accuracy = 0.25;
-        // this->precision = 1;
-        // this->sensing_interval = "PT3S ???";
-        // this->physical_context = "Chassis";
-        // this->thresh.upper_caution.activation = "Increasing";
-        // this->thresh.upper_caution.reading = 35;
-        // this->thresh.upper_critical.activation = "Increasing";
-        // this->thresh.upper_critical.reading = 40;
-        // this->thresh.lower_caution.activation = "Increasing";
-        // this->thresh.lower_caution.reading = 10;
-
-        // this->status.state = STATUS_STATE_ENABLED;
-        // this->status.health = STATUS_HEALTH_OK;
-
-
     sensor_collection->add_member(sensor);
     return;
 }
