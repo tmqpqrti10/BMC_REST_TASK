@@ -320,7 +320,7 @@ void plat_sel_test_add_entry(unsigned char fst, unsigned char second)
     entry.msg[8] = 0;
     entry.msg[9] = 0x04;
     entry.msg[10] = fst; // Sensor Type : Power Supply
-    entry.msg[11] = PEB_SENSOR_ADC_P12V;
+    entry.msg[11] = PEB_SENSOR_ADC_P12V_PSU1;
     entry.msg[12] = 0x6f;
     entry.msg[13] = second;
     entry.msg[14] = 0x04;
@@ -348,7 +348,7 @@ void plat_sel_power_reset_add_entry()
     entry.msg[8] = 0;
     entry.msg[9] = 0x04;
     entry.msg[10] = 0x23; // Sensor Type : Watchdog
-    entry.msg[11] = PEB_SENSOR_ADC_P12V;
+    entry.msg[11] = PEB_SENSOR_ADC_P12V_PSU1;
     entry.msg[12] = 0x6f;
     entry.msg[13] = 0xC1; // Command : Hard Reset
     entry.msg[14] = 0x04;
@@ -381,7 +381,7 @@ void plat_sel_power_limit_add_entry()
     entry.msg[8] = 0;
     entry.msg[9] = 0x04;
     entry.msg[10] = 0x09; // Sensor Type : Power Supply
-    entry.msg[11] = PEB_SENSOR_ADC_P12V;
+    entry.msg[11] = PEB_SENSOR_ADC_P12V_PSU1;
     entry.msg[12] = 0x05; // Digital-Discrete Event States 12 13 event byte set
     entry.msg[13] = 0x01; // Limit Exceeded
     entry.msg[14] = 0x01; // offset
@@ -413,7 +413,7 @@ void plat_sel_os_off_add_entry()
     entry.msg[8] = 0;
     entry.msg[9] = 0x04;
     entry.msg[10] = 0x11; // Sensor Type : Watchdog 1
-    entry.msg[11] = PEB_SENSOR_ADC_P12V;
+    entry.msg[11] = PEB_SENSOR_ADC_P12V_PSU1;
     entry.msg[12] = 0x6f; // 11 /12 없음 따라서 OEM
     entry.msg[13] = 0xC2;
     entry.msg[14] = 0x04; // offset
@@ -451,7 +451,7 @@ void plat_sel_power_off_add_entry()
     entry.msg[8] = 0;
     entry.msg[9] = 0x04;
     entry.msg[10] = 0x09; // Sensor Type : Power Supply
-    entry.msg[11] = PEB_SENSOR_ADC_P12V;
+    entry.msg[11] = PEB_SENSOR_ADC_P12V_PSU1;
     entry.msg[12] = 0x6f; // event type
     entry.msg[13] = 0xC0;
     entry.msg[14] = 0x04;
@@ -478,7 +478,7 @@ void plat_sel_power_add_entry()
     entry.msg[8] = 0;
     entry.msg[9] = 0x04;
     entry.msg[10] = 0x08; // Sensor Type : Power Supply
-    entry.msg[11] = PEB_SENSOR_ADC_P12V;
+    entry.msg[11] = PEB_SENSOR_ADC_P12V_PSU1;
     entry.msg[12] = 0x6f;
     entry.msg[13] = 0xC3;
     entry.msg[14] = 0x04;

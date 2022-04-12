@@ -9,8 +9,8 @@
 #define IPMI_FRU_BOARD_PATH "/conf/ipmi/fru_board.bin"
 #define IPMI_FRU_HEADER_PATH "/conf/ipmi/fru_header.bin"
 #define FIRST_BOOT_FILE "/conf/first_boot"
-#define POLICY_FILE 	"/conf/ipmi/policy.bin"
-#define ALERT_JSON 		"/conf/ipmi/alert.json"
+#define POLICY_FILE "/conf/ipmi/policy.bin"
+#define ALERT_JSON "/conf/ipmi/alert.json"
 #define EVENT_FILTER_TABLE_FILE "/conf/ipmi/eft.bin"
 #define SOCK_PATH_IPMI "/tmp/ipmi_socket"
 #define SET_FILE "/conf/ipmi/service_setting.bin"
@@ -46,21 +46,23 @@
 #define WEB_PORT_BIN "/conf/ipmi/web_port.bin"
 #define NSLCD_FILE "/etc/nslcd.conf"
 #define LDAP_BIN "/conf/ipmi/ldap.bin"
-#define AD_BIN	"/conf/ipmi/ad.bin"
+#define AD_BIN "/conf/ipmi/ad.bin"
 #define S_LAN_STR_BIN "/conf/ipmi/network_shared.bin"
 #define D_LAN_STR_BIN "/conf/ipmi/network_dedi.bin"
 #define POWER_USAGE_DB "/conf/ipmi/power.db"
 #define INTERFACE_FILE "/etc/network/interfaces"
-#define DNSSERVER_FILE  "/etc/resolv.conf"
+#define DNSSERVER_FILE "/etc/resolv.conf"
 #define HOSTNAME_FILE "/etc/hostname"
 #define DOMAINNAME_FILE "/etc/hosts"
 #define FAIL "\"CODE\":\"400\", \"MESSAGE\":\"FAIL\"}"
-#define GET_WEB_PORT "head -n 35 /etc/nginx/nginx.conf | tail -1 | awk \'{print $2}\' | awk -F \';\' \'{print $1}\'"
+#define GET_WEB_PORT                                                           \
+  "head -n 35 /etc/nginx/nginx.conf | tail -1 | awk \'{print $2}\' | awk -F "  \
+  "\';\' \'{print $1}\'"
 
+#include "ipmi/ipmi.hpp"
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
-#include "ipmi/ipmi.hpp"
 
 int init_ssh_service();
 int load_g_setting();
@@ -70,6 +72,6 @@ int init_setting_service();
 int init_kvm_service();
 int init_alert_service();
 int init_web_service();
-int set_smtp_port(char* port);
-int get_setting_service(char* res);
-int set_setting_service(char flag, char* str);
+int set_smtp_port(char *port);
+int get_setting_service(char *res);
+int set_setting_service(char flag, char *str);
