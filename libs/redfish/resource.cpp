@@ -4562,34 +4562,27 @@ void make_sensor(SensorMake _sm, uint16_t _flag) {
   odata = odata + _sm.id;
 
   Sensor *sensor;
-  cout << "1" << endl;
   if (record_is_exist(odata)) {
     sensor = (Sensor *)g_record[odata];
   } else {
     sensor = new Sensor(odata, _sm.id);
-    cout << "2" << endl;
-    cout << "odata :" << odata << endl;
-    cout << "_sm.id :" << _sm.id << endl;
-
     string col_odata = get_parent_object_uri(odata, "/");
-    cout << "col_odata :" << col_odata << endl;
     Collection *col = nullptr;
     col = (Collection *)g_record[col_odata];
     if (col == nullptr) {
-      cout << "null" << endl;
+      cout << "Collection Not Init .. deley" << endl;
+      if (sensor != nullptr)
+        delete (sensor);
+      delay(100);
+      return;
     }
-
-    cout << "3" << endl;
     col->add_member(sensor);
-    cout << "4" << endl;
     resource_save_json(col);
-    cout << "5" << endl;
   }
 
   sensor->reading_type = _sm.reading_type;
   sensor->reading_time = _sm.reading_time;
   sensor->reading = _sm.reading;
-  cout << "6" << endl;
   if (_flag & 0x1) {
     // cout << "0000 0000 0000 0001" << endl;
     sensor->reading_units = _sm.reading_units;

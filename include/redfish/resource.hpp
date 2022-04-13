@@ -2741,7 +2741,7 @@ public:
 
             init_system(system, "Systems");
         }
-
+    
         if (!record_is_exist(ODATA_CHASSIS_ID)){
             log(info) << "[...]Chassis init";
             chassis = new Chassis(ODATA_CHASSIS_ID, "Chassis");

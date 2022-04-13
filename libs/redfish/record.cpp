@@ -6,7 +6,6 @@
 extern unordered_map<string, Resource *> g_record;
 static vector<Resource *> gc;
 static set<string> dir_list;
-
 // ipmi 전용 ///////////////////////
 extern Ipmiuser ipmiUser[MAX_USER];
 extern std::map<uint8_t, std::map<uint8_t, Ipmisdr>> sdr_rec;

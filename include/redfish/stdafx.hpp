@@ -3,45 +3,45 @@
 #ifndef __STDAFX_H__
 #define __STDAFX_H__
 
-#include <iostream>
+#include <algorithm>
+#include <cmath>
 #include <cstdio>
 #include <cstdlib>
-#include <memory>
-#include <vector>
-#include <unordered_map>
 #include <fstream>
-#include <cmath>
-#include <algorithm>
-#include <random>
 #include <functional>
-#include <set> 
+#include <iostream>
+#include <memory>
+#include <random>
+#include <set>
+#include <unordered_map>
+#include <vector>
 
-#include <unistd.h>
 #include <dirent.h>
-#include <time.h> 
-#include <sys/types.h> 
-#include <sys/stat.h> 
-#include <limits.h> 
+#include <limits.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <time.h>
+#include <unistd.h>
 
+#include <cpprest/http_client.h>
 #include <cpprest/http_listener.h>
 #include <cpprest/json.h>
-#include <cpprest/http_client.h> 
 
-#include <boost/log/core.hpp>
-#include <boost/log/trivial.hpp>
-#include <boost/log/expressions.hpp>
-#include <boost/log/sinks/text_file_backend.hpp>
-#include <boost/log/utility/setup/file.hpp>
-#include <boost/log/utility/setup/common_attributes.hpp>
-#include <boost/log/sources/severity_logger.hpp>
-#include <boost/log/sources/record_ostream.hpp>
 #include <boost/asio.hpp>
 #include <boost/bind/bind.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
+#include <boost/log/core.hpp>
+#include <boost/log/expressions.hpp>
+#include <boost/log/sinks/text_file_backend.hpp>
+#include <boost/log/sources/record_ostream.hpp>
+#include <boost/log/sources/severity_logger.hpp>
+#include <boost/log/trivial.hpp>
+#include <boost/log/utility/setup/common_attributes.hpp>
+#include <boost/log/utility/setup/file.hpp>
 #include <boost/thread/thread.hpp>
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_generators.hpp>
 #include <boost/uuid/uuid_io.hpp>
-#include <boost/date_time/posix_time/posix_time.hpp>
 
 // default port define
 #define DEFAULT_SNMP_PORT 161
@@ -68,7 +68,7 @@ using namespace std;
 using namespace web;
 using namespace web::http;
 using namespace web::http::experimental::listener;
-using namespace web::http::client; 
+using namespace web::http::client;
 using namespace utility;
 
 namespace logging = boost::log;
@@ -77,20 +77,19 @@ namespace sinks = boost::log::sinks;
 namespace keywords = boost::log::keywords;
 using namespace logging::trivial;
 
-
 #ifndef __has_include
-  static_assert(false, "__has_include not supported");
+static_assert(false, "__has_include not supported");
 #else
-#  if __cplusplus >= 201703L && __has_include(<filesystem>)
-#    include <filesystem>
-     namespace fs = std::filesystem;
-#  elif __has_include(<experimental/filesystem>)
-#    include <experimental/filesystem>
-     namespace fs = std::experimental::filesystem;
-#  elif __has_include(<boost/filesystem.hpp>)
-#    include <boost/filesystem.hpp>
-     namespace fs = boost::filesystem;
-#  endif
+#if __cplusplus >= 201703L && __has_include(<filesystem>)
+#include <filesystem>
+namespace fs = std::filesystem;
+#elif __has_include(<experimental/filesystem>)
+#include <experimental/filesystem>
+namespace fs = std::experimental::filesystem;
+#elif __has_include(<boost/filesystem.hpp>)
+#include <boost/filesystem.hpp>
+namespace fs = boost::filesystem;
+#endif
 #endif
 
 extern src::severity_logger<severity_level> g_logger;
@@ -106,28 +105,25 @@ extern src::severity_logger<severity_level> g_logger;
 vector<string> string_split(const string _string, char _delimiter);
 string make_path(vector<string> tokens);
 bool comp(const string &s1, const string &s2);
-void timer(boost::asio::deadline_timer* _timer, unsigned int *_remain_expires_time);
+void timer(boost::asio::deadline_timer *_timer,
+           unsigned int *_remain_expires_time);
 string generate_token(const int len);
 
+enum ALLOCATE_NUM {
+  ALLOCATE_TASK_NUM,
+  ALLOCATE_ACCOUNT_NUM,
+  ALLOCATE_SESSION_NUM,
+  ALLOCATE_VM_CD_NUM,
+  ALLOCATE_VM_USB_NUM,
+  ALLOCATE_SUBSCRIPTION_NUM,
 
-enum ALLOCATE_NUM
-{
-     ALLOCATE_TASK_NUM,
-     ALLOCATE_ACCOUNT_NUM,
-     ALLOCATE_SESSION_NUM,
-     ALLOCATE_VM_CD_NUM,
-     ALLOCATE_VM_USB_NUM,
-     ALLOCATE_SUBSCRIPTION_NUM,
-
-
-     ALLOCATE_NUM_COUNT
+  ALLOCATE_NUM_COUNT
 };
 
 void init_numset(void);
 unsigned int allocate_numset_num(int _index);
 void insert_numset_num(int _index, unsigned int num);
 void delete_numset_num(int _index, unsigned int num);
-
 
 string get_current_object_name(string _uri, string delimiter);
 string get_parent_object_uri(string _uri, string delimiter);
@@ -140,12 +136,12 @@ string get_extracted_bmc_id_uri(string _uri);
 bool check_role_privileges(string _pri);
 string get_value_from_cmd_str(string cmd_str, string key);
 
-bool get_value_from_json_key(json::value body, string key, int& value);
-bool get_value_from_json_key(json::value body, string key, unsigned int& value);
-bool get_value_from_json_key(json::value body, string key, string& value);
-bool get_value_from_json_key(json::value body, string key, json::value& value);
-bool get_value_from_json_key(json::value body, string key, double& value);
-bool get_value_from_json_key(json::value body, string key, bool& value);
+bool get_value_from_json_key(json::value body, string key, int &value);
+bool get_value_from_json_key(json::value body, string key, unsigned int &value);
+bool get_value_from_json_key(json::value body, string key, string &value);
+bool get_value_from_json_key(json::value body, string key, json::value &value);
+bool get_value_from_json_key(json::value body, string key, double &value);
+bool get_value_from_json_key(json::value body, string key, bool &value);
 
 string generate_uuid(void);
 
@@ -170,43 +166,37 @@ int improved_stoi(string str);
 /**
  * @brief redfish 요청 구조체
  */
-struct redfish_req_t{
-    int netfn;
-    int method;
-    json::value data;
-    string uri;
+struct redfish_req_t {
+  int netfn;
+  int method;
+  json::value data;
+  string uri;
 };
 /**
  * @brief redfish 요청 응답 구조체
  */
-struct redfish_res_t{
-    int netfn;
-    int c_code;
-    json::value data;
-} ;
-
-enum{
-  POST=0,
-  GET,
-  PATCH,
-  DELETE
+struct redfish_res_t {
+  int netfn;
+  int c_code;
+  json::value data;
 };
 
-enum	// Account Service에서 Request JSON Query의 Role ID를 구분하기 위한 Flag Enum
-{
-	R_NOACCESS=1,
-	R_READONLY,
-	R_OPERATOR,
-	R_ADMINISTRATOR,
+enum { POST = 0, GET, PATCH, DELETE };
+
+enum // Account Service에서 Request JSON Query의 Role ID를 구분하기 위한 Flag
+     // Enum
+{ R_NOACCESS = 1,
+  R_READONLY,
+  R_OPERATOR,
+  R_ADMINISTRATOR,
 };
 
 enum // Response Changed Flag Enum
-{
-	CF_COMPLETE = 0,
-	CF_PROGRESS,
-	CF_CHANGED,
+{ CF_COMPLETE = 0,
+  CF_PROGRESS,
+  CF_CHANGED,
 };
-enum {	// IPC 통신 시 Sender, Receiver의 NetFn을 설정하기 위한 Enum
+enum { // IPC 통신 시 Sender, Receiver의 NetFn을 설정하기 위한 Enum
   NETFN_ACCOUNT_ENGINE_REQ = 0,
   NETFN_ACCOUNT_ENGINE_RES,
   NETFN_CHASSIS_ENGINE_REQ,
@@ -229,11 +219,10 @@ enum {	// IPC 통신 시 Sender, Receiver의 NetFn을 설정하기 위한 Enum
   NETFN_COMPOSITION_RES,
 };
 
-enum {	// Response Message Complete Code Enum 
-	RCC_SUCCESS = 0x0,
-	RCC_FAILED = 0x1,
-	RCC_UNKNOWN = 0x2,
+enum { // Response Message Complete Code Enum
+  RCC_SUCCESS = 0x0,
+  RCC_FAILED = 0x1,
+  RCC_UNKNOWN = 0x2,
 };
-
 
 #endif
