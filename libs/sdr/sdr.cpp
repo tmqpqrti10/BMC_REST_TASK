@@ -1060,7 +1060,6 @@ bool redfish_seonsor_sync(sensor_thresh_t *rec) {
     // printf("==== redfish_seonsor_sync sensor_name : %s ====\n", rec->str);
     // printf("\t redfish_seonsor_sync sensor num : %d\n", rec->sensor_type);
     double reading, lnr, lc, lnc, unr, uc, unc;
-    log(info) << "before readming";
 
     reading = sdr_convert_raw_to_sensor_value((rec), rec->nominal);
     lnr = sdr_convert_raw_to_sensor_value((rec), rec->lnr_thresh);
@@ -1069,7 +1068,7 @@ bool redfish_seonsor_sync(sensor_thresh_t *rec) {
     unr = sdr_convert_raw_to_sensor_value((rec), rec->unr_thresh);
     uc = sdr_convert_raw_to_sensor_value((rec), rec->uc_thresh);
     unc = sdr_convert_raw_to_sensor_value((rec), rec->unc_thresh);
-    log(info) << "after readming";
+
 
     SensorMake se;
     se.id = rec->str;
@@ -1095,12 +1094,9 @@ bool redfish_seonsor_sync(sensor_thresh_t *rec) {
                          time_string);
     string temp = string(time_string);
     se.reading_time = temp;
-    log(info) << "before sensor_tpye2string";
     se.reading_type = sensor_tpye2string(rec->sensor_type);
-    log(info) << "after sensor_tpye2string";
     make_sensor(se, flag);
   } catch (const std::exception &) {
-    cout << "redfish_seonsor_sync error : not make sensor" << endl;
     return false;
   }
   return true;
