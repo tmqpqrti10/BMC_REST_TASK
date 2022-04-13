@@ -477,13 +477,18 @@ int set_eft_init(void) {
        0x00,
        0x00},
 
-      {PEF_FILTER_DISABLED, PEF_ACTION_RESET_AND_POWER_CYCLE,
-       PEF_POLICY_NUMBER_DONT_CARE, PEF_SEVERITY_OK, 0x02, 0x00, 0x04,
-<<<<<<< HEAD
+      {PEF_FILTER_DISABLED,
+       PEF_ACTION_RESET_AND_POWER_CYCLE,
+       PEF_POLICY_NUMBER_DONT_CARE,
+       PEF_SEVERITY_OK,
+       0x02,
+       0x00,
+       0x04,
        NVA_SYSTEM_FAN2,
-=======
-       NVA_SENSOR_PSU1_TEMP,
        PEF_EVENT_TRIGGER_THRESHOLD,
+       0x00,
+       0x00,
+       0x00,
        0x00,
        0x00,
        0x00,
@@ -525,10 +530,6 @@ int set_eft_init(void) {
       temp_pef_data[j + dp].sensor_number = voltage_sensor_name.list[j].mask;
       set_eft_entry(index[j + dp], (unsigned char *)&temp_pef_data[j + dp]);
     }
-<<<<<<< HEAD
-=======
-
->>>>>>> main
     dp += vol;
     for (j = 0; j < temp; j++) {
       index[j + dp] = j + 1 + dp;
