@@ -82,7 +82,7 @@ using namespace std;
 // int lc_flag;
 // int l_interrupt;
 #define THRESH_NOT_AVAILABLE 0xDF
-#define BMC_SLAVE_ADDR 0x08
+#define BMC_SLAVE_ADDR 0x44
 #define SIZE_TIME_STAMP 4
 #define SENSOR_STR_SIZE 20
 #define secs_from_1970_1996 820454400

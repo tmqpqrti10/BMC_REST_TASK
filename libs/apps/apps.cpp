@@ -2021,12 +2021,13 @@ void plat_ipmi_init(void) {
     rec_id++;
   }
   // AST2600a3 포팅과정중 Pinmap 미정의로인한 임시제거
-  for (int i = 0; i < PDPB_SENSOR_COUNT; i++) {
-    inner.insert(std::make_pair(
-        rec_id, Ipmisdr(rec_id, pdpb_sensors[i].sensor_num, pdpb_sensors[i])));
-    sdr_rec.insert(std::make_pair(rec_id, inner));
-    rec_id++;
-  }
+  // for (int i = 0; i < PDPB_SENSOR_COUNT; i++) {
+  //   inner.insert(std::make_pair(
+  //       rec_id, Ipmisdr(rec_id, pdpb_sensors[i].sensor_num,
+  //       pdpb_sensors[i])));
+  //   sdr_rec.insert(std::make_pair(rec_id, inner));
+  //   rec_id++;
+  // }
   for (int i = 0; i < NVA_SENSOR_COUNT; i++) {
     inner.insert(std::make_pair(
         rec_id, Ipmisdr(rec_id, nva_sensors[i].sensor_num, nva_sensors[i])));

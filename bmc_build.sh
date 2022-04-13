@@ -1,6 +1,6 @@
 #!/bin/sh
 
-ip=10.0.6.109
+ip=10.0.6.104
 id=root
 password=ketilinux
 path=/usr/sbin
@@ -31,4 +31,4 @@ cp $rest ../target_sys/firmware/
 
 echo "scp ..."
 
-#sshpass -p $password scp $edge $rest $kvm $smltr $id@$ip:$path
+sshpass -p $password scp $edge $rest $kvm $smltr $id@$ip:$path

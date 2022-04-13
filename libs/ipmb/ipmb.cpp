@@ -60,8 +60,9 @@ static int i2c_open(uint8_t bus_num) {
 
   rc = ioctl(fd, I2C_SLAVE, BRIDGE_SLAVE_ADDR);
   if (rc < 0) {
-    printf("Failed to open slave @ address 0x%x\n", BRIDGE_SLAVE_ADDR);
-    close(fd);
+    printf("i2c_open : Failed to open slave @ address 0x%x\n",
+           BRIDGE_SLAVE_ADDR);
+    // close(fd);
     return -1;
   }
 
@@ -83,6 +84,8 @@ static int i2c_write(int fd, uint8_t *buf, uint8_t len) {
   msg.len = len - 1; // 1st byte in addr
   msg.buf = &buf[1];
 
+  printf("msg.addr = %d\n", msg.addr);
+
   data.msgs = &msg;
   data.nmsgs = 1;
 
@@ -103,8 +106,9 @@ static int i2c_write(int fd, uint8_t *buf, uint8_t len) {
   }
 
   if (rc < 0) {
-    printf("bus: %d, Failed to do raw io\n", g_bus_id);
+    printf("i2c_writeL: bus: %d, Failed to do raw io\n", g_bus_id);
     pthread_mutex_unlock(&m_i2c);
+    printf("errono =%s\n", strerror(errno));
     return -1;
   }
 
@@ -141,9 +145,10 @@ static int i2c_slave_open(uint8_t bus_num) {
 
   rc = ioctl(fd, I2C_SLAVE_RDWR, &data);
   if (rc < 0) {
-    printf("Failed to open slave @ address 0x%x", BMC_SLAVE_ADDR);
-    printf("erro no = %d\n", errno);
-    close(fd);
+    printf("i2c_slave_open : Failed to open slave @ address 0x%x",
+           BMC_SLAVE_ADDR);
+    printf("errono =%s\n", strerror(errno));
+    // close(fd);
   }
 
   return fd;
@@ -269,13 +274,15 @@ void ipmb_rx_handler(void *bus_num) {
   uint8_t tlun;
   //  uint8_t buf[MAX_BYTES] = { 0 };
   struct pollfd ufds[1];
-  printf("ipmb_rx_handler= bus =%d\n", *bnum);
+  printf("ipmb_rx_handler i2cbus =%d\n", *bnum);
   ipmb_res_t *res = (ipmb_res_t *)rx_buf;
 
   int i;
   fd = i2c_slave_open(*bnum);
+  printf("ipmb_rx_handler i2c-%d fd = %d\n", *bnum, fd);
   if (fd < 0) {
     printf("i2c_slave_open fails\n");
+    printf("errono =%s\n", strerror(errno));
     goto cleanup;
   }
   i2c_fd = fd;

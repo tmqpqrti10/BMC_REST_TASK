@@ -219,10 +219,10 @@ int read_adc_value_KTNF(const int pin, const char *device, int *value) {
     real_pin = pin % 8;
   }
   snprintf(device_name, adc_dir.c_str(), device, real_pin);
-  // cout << "read_adc_value_KTNF : device_name =" << device_name << endl;
+  cout << "read_adc_value_KTNF : device_name =" << device_name << endl;
   snprintf(full_name, LARGEST_DEVICE_NAME, "%s/%s", adc_dir.c_str(),
            device_name);
-  // cout << "read_adc_value_KTNF : full_name =" << full_name << endl;
+  cout << "read_adc_value_KTNF : full_name =" << full_name << endl;
   try {
     ret = read_device_int(full_name, &val);
   } catch (const std::exception &e) {
