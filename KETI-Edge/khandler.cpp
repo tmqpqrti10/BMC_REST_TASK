@@ -306,6 +306,7 @@ void *timer_handler(void) {
       // update_hw_status();
       dcmi_power_limit_function();
       // log(info)<<"timer_handler count="<<count;
+      log(info) << "update_sensor_reading" << endl;
       update_sensor_reading();
       cout << "ipmb test cpu temp" << endl;
       ipmb_get_cpu_temp();
