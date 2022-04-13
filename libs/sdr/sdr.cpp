@@ -335,10 +335,10 @@ void update_sensor_reading() {
   sensor_thresh_t *p_sdr, *t_sdr;
   for (auto iter = sdr_rec.begin(); iter != sdr_rec.end(); iter++) {
     p_sdr = iter->second.find(iter->first)->second.sdr_get_entry();
-    log(info) << "p_sdr-> name =" << p_sdr->str;
+    // log(info) << "p_sdr-> name =" << p_sdr->str;
     lightning_sensor_read(p_sdr->oem, p_sdr->sensor_num, &rVal);
     p_sdr->nominal = rVal;
-    cout << "update_sensor_reading nominal" << (int)p_sdr->nominal << endl;
+    // cout << "update_sensor_reading nominal" << (int)p_sdr->nominal << endl;
     if (p_sdr->sensor_num == PDPB_SENSOR_TEMP_CPU0) {
       if (p_sdr->nominal == g_Tmax || p_sdr->nominal == 0) {
         p_sdr->analog_flags = PSDR_ANALOG_DISABLE;
@@ -413,9 +413,9 @@ void update_sensor_reading() {
       else
         p_sdr->analog_flags = 0;
     }
-    cout << "before redfish_seonsor_sync" << endl;
+    // cout << "before redfish_seonsor_sync" << endl;
     redfish_seonsor_sync(p_sdr);
-    cout << "befor redfish_seonsor_sync" << endl;
+    // cout << "befor redfish_seonsor_sync" << endl;
   }
 
   // for (auto iter = sdr_rec.begin(); iter != sdr_rec.end(); iter++) {
@@ -1068,7 +1068,6 @@ bool redfish_seonsor_sync(sensor_thresh_t *rec) {
     unr = sdr_convert_raw_to_sensor_value((rec), rec->unr_thresh);
     uc = sdr_convert_raw_to_sensor_value((rec), rec->uc_thresh);
     unc = sdr_convert_raw_to_sensor_value((rec), rec->unc_thresh);
-
 
     SensorMake se;
     se.id = rec->str;
