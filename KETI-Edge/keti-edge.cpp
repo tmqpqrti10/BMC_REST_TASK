@@ -107,7 +107,7 @@ int main(void) {
   t_ipmb.join();
   t_dcmi.join();
   t_rest.join();
-  t_ssdp.join(); 
+  t_ssdp.join();
   t_timer.join();
   t_psuserver.join();
   t_sel_generate.join();
