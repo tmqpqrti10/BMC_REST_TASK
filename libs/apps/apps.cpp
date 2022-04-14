@@ -1,4 +1,4 @@
-#include "ipmi/apps.hpp"
+#include <ipmi/apps.hpp>
 #include <ipmi/lightning_sensor.hpp>
 #include <ipmi/sensor_define.hpp>
 #include <math.h>
@@ -72,12 +72,14 @@ int IPMI_Interval = 10, IPMI_Timeout = 600, IPMI_Pretimeout = 10,
 char *IPMI_Daemon = NULL, *IPMI_Pidfile = NULL, *IPMI_debug = NULL;
 Ipmiapplication::Ipmiapplication() {
   cout << "Ipmiapplication" << endl;
-  cout << "read deamon " << endl;
-  cout << "read deamon " << endl;
+  g_watchdog_config.interval = &IPMI_Interval;
+  ReadConfigurationFile(ConfigurationFileDir);
+  cout << "read WDT " << endl;
   g_watchdog_config.Islogging = true;
   g_watchdog_config.timer_actions = IPMI_Action;
   g_watchdog_config.pre_timeout = IPMI_Pretimeout;
-
+  //*g_watchdog_config.interval = 19;
+  WriteConfigurationFile(ConfigurationFileDir);
   this->g_mc_device.mc_device_id = 0x20;
   this->g_mc_device.mc_device_rev = 0x01;
   this->g_mc_device.mc_fw_version[0] = 0x01;
@@ -93,7 +95,7 @@ Ipmiapplication::Ipmiapplication() {
   this->g_mc_device.mc_aux_fw_version[1] = 0x00;
   this->g_mc_device.mc_aux_fw_version[2] = 0x00;
   this->g_mc_device.mc_aux_fw_version[3] = 0x00;
-
+  cout << "??? " << endl;
   for (int i = 0; i < 4; i++) {
     switch (i) {
     case 0:
@@ -783,6 +785,7 @@ void Ipmiapplication::ipmi_handle_app(uint8_t *request, uint8_t *response,
   switch (cmd) {
   case CMD_APP_SET_WDT:
     app_set_watchdog_timer_params(request, response, res_len);
+    WriteConfigurationFile(ConfigurationFileDir);
     break;
   case CMD_APP_GET_WDT:
     app_get_watchdog_timer_params(request, response, res_len);
@@ -1094,7 +1097,6 @@ void ipmi_handle_rest(rest_req_t *req, uint8_t *response, int *res_len) {
     cout << "\t response=" << (char *)response << endl;
     cout << "\t res_len=" << (*res_len) << endl;
     cout << "\t========== end main call ==========" << endl;
-
     break;
   case CMD_GET_FRUINFO:
     cout << "\t========== get fru info ==========" << endl;
@@ -4283,6 +4285,7 @@ static void app_set_watchdog_timer_params(unsigned char *request,
       }
     }
   }
+
   res->cc = (Ischanged) ? CC_SUCCESS : CC_UNSPECIFIED_ERROR;
   *res_len = 0;
 
@@ -4465,6 +4468,64 @@ static int ReadConfigurationFile(char *file) {
   if (fclose(ReadConfigurationFile) != 0) {
     return (1);
   }
+}
+
+static int WriteConfigurationFile(char *file) {
+
+  vector<string> lines;
+  ifstream readFromFile(ConfigurationFileDir);
+  if (readFromFile.is_open()) {
+    lines.clear();
+    while (!readFromFile.eof()) {
+      string tmp;
+      getline(readFromFile, tmp);
+      cout << tmp << endl;
+      lines.push_back(tmp);
+    }
+    readFromFile.close();
+  } else {
+    printf("%s not exist", ConfigurationFileDir);
+    return 1;
+  }
+
+  std::ofstream writeFile(ConfigurationFileDir);
+  if (writeFile.is_open()) {
+    for (int i = 0; i < lines.size(); i++) {
+      string tmp = lines[i];
+      cout << tmp << endl;
+      if (tmp.find(IPMI_INTERVAL) != string::npos) {
+        tmp = "Interval = " + to_string(*g_watchdog_config.interval);
+      } else if (tmp.find(IPMI_TIMEOUT) != string::npos) {
+        tmp = "Timeout = " + to_string(IPMI_Timeout);
+      } else if (tmp.find(IPMI_PRETIMEOUT) != string::npos) {
+        tmp = "Pretimeout = " + to_string((int)g_watchdog_config.pre_timeout);
+      } else if (tmp.find(IPMI_DAEMON) != string::npos) {
+        if (IPMI_Daemon != NULL) {
+          tmp = "Daemon = " + string(IPMI_Daemon);
+        }
+      } else if (tmp.find(IPMI_PRETIMEOUTINTERRUPT) != string::npos) {
+        tmp = "Daemon5 = " +
+              to_string((int)g_watchdog_config.pretimeoutInterrupt);
+      } else if (tmp.find(IPMI_ACTION) != string::npos) {
+        tmp = "Action = " + to_string((int)g_watchdog_config.timer_actions);
+      } else if (tmp.find(IPMI_PIDFILE) != string::npos) {
+        if (IPMI_Pidfile != NULL) {
+          tmp = "Pidfile = " + string(IPMI_Pidfile);
+        }
+      }
+
+      if (i != lines.size() - 1) {
+        tmp += "\n";
+      }
+      cout << "change =" << tmp << endl;
+      writeFile.write(tmp.c_str(), tmp.size());
+    }
+
+  } else {
+    printf("file not exist");
+  }
+  writeFile.close();
+  return 1;
 }
 /**
  * @brief LAN Alert Configuration Descriptor

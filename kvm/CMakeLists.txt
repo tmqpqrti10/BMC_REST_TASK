@@ -8,10 +8,8 @@ set(
 )
 set(
     SOURCE_FILES
-    kvm.c
-    kmrecv.c
+    ast-video.c
     video.c
-    vsend.c
 )
 
 # Compiler setting
