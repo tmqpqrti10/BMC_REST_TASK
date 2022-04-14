@@ -1,9 +1,6 @@
 #ifndef __IPMB_H__
 #define __IPMB_H__
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 #include <linux/i2c-dev.h>
 #include <linux/i2c.h>
 #include <stdint.h>
@@ -13,10 +10,18 @@ extern "C" {
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <unistd.h>
+
+#include <boost/algorithm/string/replace.hpp>
+#include <boost/asio/write.hpp>
+#include <filesystem>
+#include <fstream>
+#include <ipmi/ipmbdefines.hpp>
+#include <tuple>
+#include <unordered_map>
 #define SOCK_PATH_IPMB "/tmp/ipmb_socket"
 #define MAX_BYTES 300
 
-#define BRIDGE_SLAVE_ADDR 0x44
+#define BRIDGE_SLAVE_ADDR 0x16
 /**
  * @brief IPMB ZEROSUM 확인
  *
@@ -45,7 +50,6 @@ extern "C" {
 /***********************************************************
  * I2C-DEV Addendum
  **********************************************************/
-
 /* Additional ioctl commands for /dev/i2c-X */
 #define I2C_SLAVE_RD 0x0710   /* Slave Read */
 #define I2C_SLAVE_WR 0x0711   /* Slave /Write */
@@ -90,7 +94,7 @@ void lib_ipmb_handle(unsigned char bus_id, unsigned char *request,
 void ipmb_open(uint8_t ipmb_bus_num);
 void ipmb_close(void);
 void ipmb_rx_handler(void *bus_num);
-
+void ipmb_get_deviceid(void);
 void ipmb_get_cpu_temp(void);
 void ipmb_i2c_open(unsigned char busm);
 /**
@@ -238,9 +242,5 @@ typedef enum ipmb_error {
   ipmb_error_queue_creation /**< Client queue couldn't be created. Invalid
                                pointer to handler was given */
 } ipmb_error;
-
-#ifdef __cplusplus
-} // extern "C"
-#endif
 
 #endif /* __IPMB_H__ */

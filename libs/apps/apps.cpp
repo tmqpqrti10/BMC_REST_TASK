@@ -73,17 +73,10 @@ char *IPMI_Daemon = NULL, *IPMI_Pidfile = NULL, *IPMI_debug = NULL;
 Ipmiapplication::Ipmiapplication() {
   cout << "Ipmiapplication" << endl;
   cout << "read deamon " << endl;
-  ReadConfigurationFile(ConfigurationFileDir);
   cout << "read deamon " << endl;
   g_watchdog_config.Islogging = true;
   g_watchdog_config.timer_actions = IPMI_Action;
   g_watchdog_config.pre_timeout = IPMI_Pretimeout;
-  // parameter.TimeoutMsb = (int)IPMI_MSB_LSB_TimeOut.TimeOutHex[0] ;
-  // parameter.TimeoutLsb = (int)IPMI_MSB_LSB_TimeOut.TimeOutHex[1] ;
-  // parameter.PreTimeout = IPMI_Pretimeout;
-  // parameter.TimeoutAction = IPMI_Action;
-  // g_watchdog_config.
-  // parameter.PreTimeouInterrupt = IPMI_PretimeoutInterrupt;
 
   this->g_mc_device.mc_device_id = 0x20;
   this->g_mc_device.mc_device_rev = 0x01;
@@ -1972,7 +1965,7 @@ void plat_ipmi_init(void) {
   log(info) << "plat_ipmi_init start";
   char g_host_name[20];
   char g_kernel_version[20];
-  // plat_ipmb_init();
+
   FILE *pp = fopen("/proc/sys/kernel/osrelease", "r");
   fgets(g_kernel_version, sizeof(char) * 20, pp);
   fclose(pp);

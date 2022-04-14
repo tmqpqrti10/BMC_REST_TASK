@@ -314,7 +314,8 @@ void *timer_handler(void) {
       log(info) << "update_sensor_reading" << endl;
       update_sensor_reading();
       cout << "ipmb test cpu temp" << endl;
-      ipmb_get_cpu_temp();
+      // ipmb_get_cpu_temp();
+      ipmb_get_deviceid();
       count = 0;
     }
     front_LED_blink(count++);
@@ -323,8 +324,7 @@ void *timer_handler(void) {
 }
 void *ipmb_handler(void *bus_num) {
   log(info) << "\n\n======ipmb_handler start =============";
-  while (!is_init_resource)
-    ;
+  plat_ipmb_init();
   ipmb_rx_handler(bus_num);
   log(info) << "======ipmb_handler end =============\n\n";
 }
