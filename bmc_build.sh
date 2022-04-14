@@ -1,6 +1,6 @@
 #!/bin/sh
 
-ip=10.0.6.109
+ip=10.0.6.104
 id=root
 password=ketilinux
 path=/usr/sbin
@@ -12,6 +12,7 @@ ssh-keyscan -t rsa $ip >>~/.ssh/known_hosts
 edge=output/bin/KETI-Edge
 rest=output/bin/KETI-REST
 psu=output/bin/KETI-PSU
+WDT=output/bin/KETI-WDT
 smltr=smltr/smltr
 kvm=kvm/KETI-KVM
 cmake CMakeLists.txt

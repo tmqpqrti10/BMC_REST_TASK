@@ -54,3 +54,4 @@ link_directories(
 add_subdirectory(${STATIC_LIBS_DIR})
 add_subdirectory(${EDGE_DIR})
 add_subdirectory(KETI-REST)
+add_subdirectory(KETI-WDT)
