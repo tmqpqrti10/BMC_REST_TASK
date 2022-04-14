@@ -226,7 +226,7 @@ int read_adc_value_KTNF(const int pin, const char *device, int *value) {
   try {
     ret = read_device_int(full_name, &val);
   } catch (const std::exception &e) {
-    cout << "read_adc_value_KTNF error : not exist " << full_name << endl;
+    // cout << "read_adc_value_KTNF error : not exist " << full_name << endl;
   }
   *value = val; //>>2
   return (ret);
@@ -689,48 +689,6 @@ void get_ipmb_sensor(int id, unsigned char *response, unsigned char res_len) {
   }
   cout << endl;
 }
-// void get_ipmb_sensor1(int id, unsigned char *response, unsigned char res_len)
-// {
-//         ipmb_res_t *res = (ipmb_res_t *) response;
-//         int i;
-//         switch(id)
-//         {
-//                 case 48:
-//                         g_Tmax = res->data[0];
-
-//                 break;
-//                 case 0x4B:
-//                         temp_data[0] = res->data[3];
-//                         temp_data[1] = res->data[4];
-//                         for(i=0; i<4; i++){
-//                               if (res->data[5+i] != 0xff)
-//                                 temp_data[2+8+i] = res->data[5+i];
-//                               else
-//                                 temp_data[2+8+i] = 0;
-//                         }
-//                         for(i=0; i<4; i++){
-//                               if (res->data[5+4+i] != 0xff)
-//                                 temp_data[2+12+8+i] = res->data[5+4+i];
-//                               else
-//                                 temp_data[2+12+8+i] = 0;
-//                         }
-
-//                 break;
-//                 default:
-//                 break;
-//         }
-// }
-
-//  int
-//  lightning_sensor_sdr_path(uint8_t fru, char *path) {
-//    return 0;
-//  }
-
-//  int
-//  lightning_sensor_sdr_init(uint8_t fru, sensor_info_t *sinfo) {
-//    return -1;
-//  }
-
 unsigned char ipmb_res_handle(unsigned char *response, unsigned char res_len) {
 
   ipmb_res_t *res = (ipmb_res_t *)response;
@@ -948,27 +906,27 @@ int lightning_sensor_read(uint8_t fru, uint8_t sensor_num, int *value) {
     case PDPB_SENSOR_TEMP_REAR_RIGHT:
       ret = read_temp_value(I2C_DEV_PDPB, PDPB_REAR_RIGHT, LOCAL_SENSOR,
                             (uint32_t *)value);
-      // cout << "PDPB_REAR_RIGHT value=" << *value << endl;
+
       break;
     case PDPB_SENSOR_TEMP_CPU_AMBIENT:
       ret = read_temp_value(I2C_DEV_PDPB, PDPB_CPU_AMBIENT, LOCAL_SENSOR,
                             (uint32_t *)value);
-      // cout << "PDPB_CPU_AMBIENT value=" << *value << endl;
+
       break;
     case PDPB_SENSOR_TEMP_FRONT_RIGHT:
       ret = read_temp_value(I2C_DEV_PDPB, PDPB_FRONT_RIGHT, LOCAL_SENSOR,
                             (uint32_t *)value);
-      // cout << "PDPB_FRONT_RIGHT value=" << *value << endl;
+
       break;
     case PDPB_SENSOR_TEMP_PCIE_AMBIENT:
       ret = read_temp_value(I2C_DEV_PDPB, PDPB_PCIE_AMBIENT, LOCAL_SENSOR,
                             (uint32_t *)value);
-      // cout << "PDPB_PCIE_AMBIENT value=" << *value << endl;
+
       break;
     case PDPB_SENSOR_TEMP_FRONT_LEFT:
       ret = read_temp_value(I2C_DEV_PDPB, PDPB_FRONT_LEFT, LOCAL_SENSOR,
                             (uint32_t *)value);
-      // cout << "PDPB_FRONT_LEFT value=" << *value << endl;
+
       break;
     case PDPB_SENSOR_TEMP_CPU0:
       // tmp = get_value_from_SMLTR(sensor_num);

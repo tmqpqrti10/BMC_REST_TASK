@@ -11,7 +11,6 @@
 int video_fd; 
 void *video_stream_addr;
 void *video_jpeg_addr;
-//unsigned long video_mem_size;
 
 int ast_video_open(void)
 {
@@ -27,6 +26,12 @@ void ast_video_close(void)
 {
 	close(video_fd);
 }
+
+void ast_video_reset(void) {	
+	if (ioctl(video_fd, AST_VIDEO_RESET, NULL) < 0) {
+		printf("AST_VIDEO_RESET fail\n");
+	}
+}		
 
 void ast_video_get_vga_signal(unsigned char *signal)
 {
@@ -93,9 +98,40 @@ void ast_video_auto_mode_trigger(struct ast_auto_mode* auto_mode)
 	} 
 }
 
-void ast_video_set_vga_display(int *vga_enable) {
-	
+void ast_video_capture_mode_trigger(struct ast_capture_mode* capture_mode)
+{
+	if (ioctl(video_fd, AST_VIDEO_CAPTURE_TRIGGER, capture_mode) < 0) {
+		printf("AST_VIDEO_CAPTURE_TRIGGER fail\n");
+	} 
+}
+
+void ast_video_compression_mode_trigger(struct ast_compression_mode* compression_mode)
+{
+	if (ioctl(video_fd, AST_VIDEO_COMPRESSION_TRIGGER, compression_mode) < 0) {
+		printf("AST_VIDEO_COMPRESSION_TRIGGER fail\n");
+	} 
+}
+
+void ast_video_set_vga_display(int *vga_enable) {	
 	if (ioctl(video_fd, AST_VIDEO_SET_VGA_DISPLAY, vga_enable) < 0) {
 		printf("AST_VIDEO_SET_VGA_DISPLAY fail\n");
 	}
 }		
+
+void ast_video_set_encryption(int enable) {
+	if (ioctl(video_fd, AST_VIDEO_SET_ENCRYPTION, enable) < 0) {
+		printf("AST_VIDEO_SET_ENCRYPTION fail\n");
+	}
+}
+
+void ast_video_set_encryption_key(unsigned char *key) {
+	if (ioctl(video_fd, AST_VIDEO_SET_ENCRYPTION_KEY, key) < 0) {
+		printf("AST_VIDEO_SET_ENCRYPTION_KEY fail\n");
+	}
+}
+
+void ast_video_set_crt_compression(	struct fb_var_screeninfo *vinfo) {	
+	if (ioctl(video_fd, AST_VIDEO_SET_CRT_COMPRESSION, vinfo) < 0) {
+		printf("AST_VIDEO_SET_CRT_COMPRESSION fail\n");
+	}
+}

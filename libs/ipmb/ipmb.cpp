@@ -60,12 +60,23 @@ static int i2c_open(uint8_t bus_num) {
 
   rc = ioctl(fd, I2C_SLAVE, BRIDGE_SLAVE_ADDR);
   if (rc < 0) {
-    printf("Failed to open slave @ address 0x%x\n", BRIDGE_SLAVE_ADDR);
+    printf("i2c_open : Failed to open slave @ address 0x%x\n",
+           BRIDGE_SLAVE_ADDR);
     close(fd);
     return -1;
   }
 
   return fd;
+}
+
+void plat_ipmb_init() {
+  printf("plat_ipmb_init\n");
+  i2c_fd = i2c_open(IPMB_I2C_BUS);
+  printf("IPMB BUS 0x%x is FD= %d\n", IPMB_I2C_BUS, i2c_fd);
+  if (i2c_fd < 0) {
+    printf("i2c_open failure\n"); // syslog
+    fprintf(stderr, "i2c_fd failed\n");
+  }
 }
 
 static int i2c_write(int fd, uint8_t *buf, uint8_t len) {
@@ -95,6 +106,7 @@ static int i2c_write(int fd, uint8_t *buf, uint8_t len) {
   for (i = 0; i < I2C_RETRIES_MAX; i++) {
     rc = ioctl(fd, I2C_RDWR, &data);
     if (rc < 0) {
+      // nanosleep(&req, &rem);
       delay(20);
       continue;
     } else {
@@ -124,7 +136,7 @@ static int i2c_slave_open(uint8_t bus_num) {
   snprintf(fn, sizeof(fn), "/dev/i2c-%d", bus_num);
   fd = open(fn, O_RDWR);
   if (fd == -1) {
-    printf("Failed to open i2c device %s", fn);
+    printf("Failed to open i2c device %s\n", fn);
     return -1;
   }
 
@@ -141,8 +153,7 @@ static int i2c_slave_open(uint8_t bus_num) {
 
   rc = ioctl(fd, I2C_SLAVE_RDWR, &data);
   if (rc < 0) {
-    printf("Failed to open slave @ address 0x%x", BMC_SLAVE_ADDR);
-    printf("erro no = %d\n", errno);
+    printf("Failed to open slave @address 0x%x  fd =%d\n", BMC_SLAVE_ADDR, fd);
     close(fd);
   }
 
@@ -176,85 +187,29 @@ static int i2c_slave_read(int fd, uint8_t *buf, uint8_t *len) {
 }
 
 /*
- * Function to handle IPMB messages
- */
-void lib_ipmb_handle(unsigned char bus_id, unsigned char *request,
-                     unsigned char req_len, unsigned char *response,
-                     unsigned char *res_len) {
-
-  int s, t, len;
-  struct sockaddr_un remote;
-  char sock_path[64] = {0};
-  struct timeval tv;
-
-  sprintf(sock_path, "%s_%d", SOCK_PATH_IPMB, bus_id);
-
-  // TODO: Need to update to reuse the socket instead of creating new
-  if ((s = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) {
-    printf("lib_ipmb_handle: socket() failed\n");
-    return;
-  }
-
-  // setup timeout for receving on socket
-  tv.tv_sec = TIMEOUT_IPMB + 1;
-  tv.tv_usec = 0;
-
-  setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, (char *)&tv, sizeof(struct timeval));
-
-  remote.sun_family = AF_UNIX;
-  strcpy(remote.sun_path, sock_path);
-  len = strlen(remote.sun_path) + sizeof(remote.sun_family);
-
-  if (connect(s, (struct sockaddr *)&remote, len) == -1) {
-    printf("ipmb_handle: connect() failed\n");
-    goto clean_exit;
-  }
-
-  if (send(s, request, req_len, 0) == -1) {
-    printf("ipmb_handle: send() failed\n");
-    goto clean_exit;
-  }
-
-  if ((t = recv(s, response, MAX_IPMB_RES_LEN, 0)) > 0) {
-    *res_len = t;
-  } else {
-    if (t < 0) {
-      printf("lib_ipmb_handle: recv() failed\n");
-    } else {
-      printf("Server closed connection\n");
-    }
-  }
-
-clean_exit:
-  close(s);
-
-  return;
-}
-
-/*
  * Function to handle all IPMB requests
  */
 static void ipmb_handle(int fd, unsigned char *request, unsigned char req_len,
-                        unsigned char *response, unsigned char *res_len) {
-  printf("ipmb request handler static void ipmb_handle\n");
+                        unsigned char *response, int *res_len) {
   ipmb_req_t *req = (ipmb_req_t *)request;
   ipmb_res_t *res = (ipmb_res_t *)response;
-  printf("req  res_slave_addr= %d\n", req->res_slave_addr);
-  printf("req  netfn_lun= %d\n", req->netfn_lun);
-  printf("req  hdr_cksum= %d\n", req->hdr_cksum);
-  printf("req  req_slave_addr= %d\n", req->req_slave_addr);
-  printf("req  seq_lun= %d\n", req->seq_lun);
-  printf("req  cmd= %d\n", req->cmd);
-  printf("req  dest_LUN  = %d\n", req->dest_LUN);
-  printf("req  src_LUN  = %d\n", req->src_LUN);
-  printf("req  data[IPMI_MSG_MAX_LENGTH]=");
-  int j = 0;
-  for (j = 0; j < IPMI_MSG_MAX_LENGTH; j++) {
-    printf("%x ", req->data[j]);
-  }
-  printf("\n");
 
   int8_t index;
+  // printf("req  res_slave_addr= %d\n", req->res_slave_addr);
+  // printf("req  netfn_lun= %d\n", req->netfn_lun);
+  // printf("req  hdr_cksum= %d\n", req->hdr_cksum);
+  // printf("req  req_slave_addr= %d\n", req->req_slave_addr);
+  // printf("req  seq_lun= %d\n", req->seq_lun);
+  // printf("req  cmd= %d\n", req->cmd);
+  // printf("req  dest_LUN  = %d\n", req->dest_LUN);
+  // printf("req  src_LUN  = %d\n", req->src_LUN);
+  // printf("req  data[IPMI_MSG_MAX_LENGTH]=");
+  int j = 0;
+  // for (j = 0; j < IPMI_MSG_MAX_LENGTH; j++) {
+  //   printf("%x ", req->data[j]);
+  // }
+  // printf("\n");
+
   // Send request over i2c bus
   if (i2c_write(fd, request, req_len)) {
     goto ipmb_handle_out;
@@ -269,28 +224,26 @@ void ipmb_rx_handler(void *bus_num) {
   uint8_t tlun;
   //  uint8_t buf[MAX_BYTES] = { 0 };
   struct pollfd ufds[1];
-  printf("ipmb_rx_handler= bus =%d\n", *bnum);
+
   ipmb_res_t *res = (ipmb_res_t *)rx_buf;
 
   int i;
   fd = i2c_slave_open(*bnum);
   if (fd < 0) {
     printf("i2c_slave_open fails\n");
+
     goto cleanup;
   }
-  i2c_fd = fd;
   ufds[0].fd = fd;
   ufds[0].events = POLLIN;
 
   while (1) {
     if (i2c_slave_read(fd, rx_buf, &rx_len) < 0) {
-      // printf("ipmb_rx_handler i2c_slave_read return = 0\n");
       poll(ufds, 1, 10);
       continue;
     }
-    printf("i2c read sucessfull \n\n");
     if (rx_len < IPMB_PKT_MIN_SIZE) {
-      printf("bus: %d, IPMB Packet invalid size %d", g_bus_id, rx_len);
+      printf("bus: %d, IPMB Packet invalid size %d\n", g_bus_id, rx_len);
       continue;
     }
     if (res->hdr_cksum != calc_cksum(rx_buf, 2)) {
@@ -333,10 +286,11 @@ static int ipmb_encode(uint8_t *buffer, ipmi_msg *msg) {
   return (i + 1);
 }
 
-void ipmb_get_deviceid(void) {
+static void ipmb_get_deviceid(void) {
   //	unsigned char data[128]={0};
   unsigned char req_buf[128] = {0};
   unsigned char res_buf[128] = {0};
+
   int req_len, res_len;
 
   ipmi_msg req_msg;
@@ -344,21 +298,18 @@ void ipmb_get_deviceid(void) {
 
   //	printf("get device id!!\n");
   req_msg.dest_addr = BRIDGE_SLAVE_ADDR << 1;
-  // req_msg.dest_addr = 0x00;
   req_msg.netfn = 0x06; // APP
   req_msg.dest_LUN = 0;
   req_msg.src_LUN = 0;
   req_msg.cmd = 0x01; // get device id
   req_msg.src_addr = BMC_SLAVE_ADDR << 1;
-  // req_msg.src_addr = 0x44;
   if (gseq == 63)
     gseq = 0;
   req_msg.seq = ++gseq; // seq_get_new();
   req_msg.data_len = 0;
   req_len = ipmb_encode(req_buf, &req_msg);
   count = 0;
-  unsigned char uc_len = static_cast<unsigned char>(res_len);
-  ipmb_handle(i2c_fd, req_buf, req_len, res_buf, &(uc_len));
+  ipmb_handle(i2c_fd, req_buf, req_len, res_buf, &res_len);
 }
 
 int ipmb_sensor_reading(uint8_t id) {
@@ -390,8 +341,7 @@ int ipmb_sensor_reading(uint8_t id) {
   req_len = ipmb_encode(req_buf, &req_msg);
   rx_done = 0;
   count = 0;
-  unsigned char uc_len = static_cast<unsigned char>(res_len);
-  ipmb_handle(i2c_fd, req_buf, req_len, res_buf, &(uc_len));
+  ipmb_handle(i2c_fd, req_buf, req_len, res_buf, &(res_len));
   while ((rx_done == 0) && count < 300) {
     count++;
     delay(1);
@@ -410,10 +360,13 @@ int ipmb_sensor_reading(uint8_t id) {
 void ipmb_get_cpu_temp(void) {
   unsigned char req_buf[128] = {0};
   unsigned char res_buf[128] = {0};
+
   int req_len, res_len;
+
   ipmi_msg req_msg;
   int i;
   int count;
+
   i = 0;
   req_msg.dest_addr = BRIDGE_SLAVE_ADDR << 1;
   req_msg.netfn = 0x2E; // OEM GROUP
@@ -449,16 +402,11 @@ void ipmb_get_cpu_temp(void) {
   req_len = ipmb_encode(req_buf, &req_msg);
   count = 0;
   rx_done = 0;
-
-  unsigned char uc_len = static_cast<unsigned char>(res_len);
-  cout << "i2c_fd =" << i2c_fd << endl;
-  ipmb_handle(i2c_fd, req_buf, req_len, res_buf, &(uc_len));
-
+  ipmb_handle(i2c_fd, req_buf, req_len, res_buf, &res_len);
   while ((rx_done == 0) && count < 300) {
     count++;
     delay(1);
   }
-  cout << "ipmb_get_cpu_temp rx_done=" << static_cast<int>(rx_done) << endl;
   if (rx_done) {
     get_ipmb_sensor(0x4B, rx_buf, rx_len);
   }

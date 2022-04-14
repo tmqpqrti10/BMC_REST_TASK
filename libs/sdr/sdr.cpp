@@ -335,11 +335,10 @@ void update_sensor_reading() {
   sensor_thresh_t *p_sdr, *t_sdr;
   for (auto iter = sdr_rec.begin(); iter != sdr_rec.end(); iter++) {
     p_sdr = iter->second.find(iter->first)->second.sdr_get_entry();
-    // log(info)<<"p_sdr-> name ="<<p_sdr->str;
+    // log(info) << "p_sdr-> name =" << p_sdr->str;
     lightning_sensor_read(p_sdr->oem, p_sdr->sensor_num, &rVal);
-
     p_sdr->nominal = rVal;
-    // cout<<"update_sensor_reading nominal"<<(int)p_sdr->nominal<<endl;
+    // cout << "update_sensor_reading nominal" << (int)p_sdr->nominal << endl;
     if (p_sdr->sensor_num == PDPB_SENSOR_TEMP_CPU0) {
       if (p_sdr->nominal == g_Tmax || p_sdr->nominal == 0) {
         p_sdr->analog_flags = PSDR_ANALOG_DISABLE;
@@ -414,36 +413,38 @@ void update_sensor_reading() {
       else
         p_sdr->analog_flags = 0;
     }
+    // cout << "before redfish_seonsor_sync" << endl;
     redfish_seonsor_sync(p_sdr);
+    // cout << "befor redfish_seonsor_sync" << endl;
   }
 
-  for (auto iter = sdr_rec.begin(); iter != sdr_rec.end(); iter++) {
-    p_sdr = iter->second.begin()->second.sdr_get_entry();
+  // for (auto iter = sdr_rec.begin(); iter != sdr_rec.end(); iter++) {
+  //   p_sdr = iter->second.begin()->second.sdr_get_entry();
 
-    // AST2600A3 포팅 적용해야함 전부 바뀜
-    // if (cpu0_flag == 1)
-    // {
-    //     if (p_sdr->sensor_num == PEB_SENSOR_ADC_P1V05)
-    //         p_sdr->analog_flags = PSDR_ANALOG_DISABLE;
-    //     if (p_sdr->sensor_num == PEB_SENSOR_ADC_P1V2_VDDQ)
-    //         p_sdr->analog_flags = PSDR_ANALOG_DISABLE;
-    //     if (p_sdr->sensor_num == PEB_SENSOR_ADC_P1V2_DEF)
-    //         p_sdr->analog_flags = PSDR_ANALOG_DISABLE;
-    //     if (p_sdr->sensor_num == PEB_SENSOR_ADC_P1V0_CPU0)
-    //         p_sdr->analog_flags = PSDR_ANALOG_DISABLE;
-    // }
-    // if (cpu1_flag == 1)
-    // {
-    //     if (p_sdr->sensor_num == PEB_SENSOR_ADC_P1V7_CPU1)
-    //         p_sdr->analog_flags = PSDR_ANALOG_DISABLE;
-    //     if (p_sdr->sensor_num == PEB_SENSOR_ADC_P1V2_GHJ)
-    //         p_sdr->analog_flags = PSDR_ANALOG_DISABLE;
-    //     if (p_sdr->sensor_num == PEB_SENSOR_ADC_P1V2_KLM)
-    //         p_sdr->analog_flags = PSDR_ANALOG_DISABLE;
-    //     if (p_sdr->sensor_num == PEB_SENSOR_ADC_P1V0_CPU1)
-    //         p_sdr->analog_flags = PSDR_ANALOG_DISABLE;
-    // }
-  }
+  //   // AST2600A3 포팅 적용해야함 전부 바뀜
+  //   // if (cpu0_flag == 1)
+  //   // {
+  //   //     if (p_sdr->sensor_num == PEB_SENSOR_ADC_P1V05)
+  //   //         p_sdr->analog_flags = PSDR_ANALOG_DISABLE;
+  //   //     if (p_sdr->sensor_num == PEB_SENSOR_ADC_P1V2_VDDQ)
+  //   //         p_sdr->analog_flags = PSDR_ANALOG_DISABLE;
+  //   //     if (p_sdr->sensor_num == PEB_SENSOR_ADC_P1V2_DEF)
+  //   //         p_sdr->analog_flags = PSDR_ANALOG_DISABLE;
+  //   //     if (p_sdr->sensor_num == PEB_SENSOR_ADC_P1V0_CPU0)
+  //   //         p_sdr->analog_flags = PSDR_ANALOG_DISABLE;
+  //   // }
+  //   // if (cpu1_flag == 1)
+  //   // {
+  //   //     if (p_sdr->sensor_num == PEB_SENSOR_ADC_P1V7_CPU1)
+  //   //         p_sdr->analog_flags = PSDR_ANALOG_DISABLE;
+  //   //     if (p_sdr->sensor_num == PEB_SENSOR_ADC_P1V2_GHJ)
+  //   //         p_sdr->analog_flags = PSDR_ANALOG_DISABLE;
+  //   //     if (p_sdr->sensor_num == PEB_SENSOR_ADC_P1V2_KLM)
+  //   //         p_sdr->analog_flags = PSDR_ANALOG_DISABLE;
+  //   //     if (p_sdr->sensor_num == PEB_SENSOR_ADC_P1V0_CPU1)
+  //   //         p_sdr->analog_flags = PSDR_ANALOG_DISABLE;
+  //   // }
+  // }
 
   time_t ltime = time(NULL);
   struct tm tm_local = *localtime(&ltime);
@@ -1049,46 +1050,53 @@ string sensor_tpye2string(uint8_t ipmisensor_type) {
  * @return false
  */
 bool redfish_seonsor_sync(sensor_thresh_t *rec) {
-  time_t ltime = time(NULL);
-  struct tm tm_local = *localtime(&ltime);
-  // sensor_time_function(tm_local.tm_year, tm_local.tm_mon, tm_local.tm_mday,
-  // tm_local.tm_hour, tm_local.tm_min, tm_local.tm_sec, time_string);
-  // printf("==== redfish_seonsor_sync sensor_name : %s ====\n", rec->str);
-  // printf("\t redfish_seonsor_sync sensor num : %d\n", rec->sensor_type);
-  double reading, lnr, lc, lnc, unr, uc, unc;
 
-  reading = sdr_convert_raw_to_sensor_value((rec), rec->nominal);
-  lnr = sdr_convert_raw_to_sensor_value((rec), rec->lnr_thresh);
-  lc = sdr_convert_raw_to_sensor_value((rec), rec->lc_thresh);
-  lnc = sdr_convert_raw_to_sensor_value((rec), rec->lnc_thresh);
-  unr = sdr_convert_raw_to_sensor_value((rec), rec->unr_thresh);
-  uc = sdr_convert_raw_to_sensor_value((rec), rec->uc_thresh);
-  unc = sdr_convert_raw_to_sensor_value((rec), rec->unc_thresh);
-  SensorMake se;
-  se.id = rec->str;
-  se.reading = reading;
-  se.thresh.lower_caution.reading = lnc;
-  se.thresh.lower_critical.reading = lc;
-  se.thresh.upper_critical.reading = uc;
-  se.thresh.upper_caution.reading = unc;
-  se.thresh.upper_fatal.reading = unr;
-  se.thresh.lower_fatal.reading = lnr;
-  uint16_t flag;
-  flag |= 0x1; // reading_units
-  // flag|=0x40; //sensing_interval
-  flag |= 0x80;   // lower_caution
-  flag |= 0x100;  // lower_critical
-  flag |= 0x200;  // lower_fatal
-  flag |= 0x400;  // upper_caution
-  flag |= 0x800;  // upper_critical
-  flag |= 0x1000; // upper_fatal
-  char time_string[100] = {0};
-  sensor_time_function(tm_local.tm_year, tm_local.tm_mon, tm_local.tm_mday,
-                       tm_local.tm_hour, tm_local.tm_min, tm_local.tm_sec,
-                       time_string);
-  string temp = string(time_string);
-  se.reading_time = temp;
-  se.reading_type = sensor_tpye2string(rec->sensor_type);
-  make_sensor(se, flag);
+  try {
+
+    time_t ltime = time(NULL);
+    struct tm tm_local = *localtime(&ltime);
+    // sensor_time_function(tm_local.tm_year, tm_local.tm_mon, tm_local.tm_mday,
+    // tm_local.tm_hour, tm_local.tm_min, tm_local.tm_sec, time_string);
+    // printf("==== redfish_seonsor_sync sensor_name : %s ====\n", rec->str);
+    // printf("\t redfish_seonsor_sync sensor num : %d\n", rec->sensor_type);
+    double reading, lnr, lc, lnc, unr, uc, unc;
+
+    reading = sdr_convert_raw_to_sensor_value((rec), rec->nominal);
+    lnr = sdr_convert_raw_to_sensor_value((rec), rec->lnr_thresh);
+    lc = sdr_convert_raw_to_sensor_value((rec), rec->lc_thresh);
+    lnc = sdr_convert_raw_to_sensor_value((rec), rec->lnc_thresh);
+    unr = sdr_convert_raw_to_sensor_value((rec), rec->unr_thresh);
+    uc = sdr_convert_raw_to_sensor_value((rec), rec->uc_thresh);
+    unc = sdr_convert_raw_to_sensor_value((rec), rec->unc_thresh);
+
+    SensorMake se;
+    se.id = rec->str;
+    se.reading = reading;
+    se.thresh.lower_caution.reading = lnc;
+    se.thresh.lower_critical.reading = lc;
+    se.thresh.upper_critical.reading = uc;
+    se.thresh.upper_caution.reading = unc;
+    se.thresh.upper_fatal.reading = unr;
+    se.thresh.lower_fatal.reading = lnr;
+    uint16_t flag;
+    flag |= 0x1; // reading_units
+    // flag|=0x40; //sensing_interval
+    flag |= 0x80;   // lower_caution
+    flag |= 0x100;  // lower_critical
+    flag |= 0x200;  // lower_fatal
+    flag |= 0x400;  // upper_caution
+    flag |= 0x800;  // upper_critical
+    flag |= 0x1000; // upper_fatal
+    char time_string[100] = {0};
+    sensor_time_function(tm_local.tm_year, tm_local.tm_mon, tm_local.tm_mday,
+                         tm_local.tm_hour, tm_local.tm_min, tm_local.tm_sec,
+                         time_string);
+    string temp = string(time_string);
+    se.reading_time = temp;
+    se.reading_type = sensor_tpye2string(rec->sensor_type);
+    make_sensor(se, flag);
+  } catch (const std::exception &) {
+    return false;
+  }
   return true;
 }

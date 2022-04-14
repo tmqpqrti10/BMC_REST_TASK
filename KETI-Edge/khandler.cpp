@@ -20,7 +20,7 @@
 #include <ipmi/sdr.hpp>
 unsigned int f_fan_error;
 #define ETH_COUNT 4
-
+bool is_init_resource;
 extern Ipminetwork ipmiNetwork[ETH_COUNT];
 extern Dcmiconfiguration dcmiConfiguration;
 extern std::map<uint8_t, std::map<uint8_t, Ipmisdr>> sdr_rec;
@@ -292,10 +292,15 @@ void front_LED_blink(int id_interval) {
 void *timer_handler(void) {
   int count = 0;
   while (true) {
-
-    if (edgetimer_stop_flag) {
-      return;
+    if (is_init_resource == false) {
+      cout << "timer_handler: continue" << endl;
+      delay(100);
+      continue;
     }
+
+    // if (edgetimer_stop_flag) {
+    //   return;
+    // }
     if (count == 3) {
       for (int i = 0; i < 4; i++) {
         ipmiNetwork[i].plat_lan_changed(ipmiNetwork[i].chan);
@@ -306,9 +311,11 @@ void *timer_handler(void) {
       // update_hw_status();
       dcmi_power_limit_function();
       // log(info)<<"timer_handler count="<<count;
+      log(info) << "update_sensor_reading" << endl;
       update_sensor_reading();
       cout << "ipmb test cpu temp" << endl;
-      ipmb_get_cpu_temp();
+      // ipmb_get_cpu_temp();
+      ipmb_get_deviceid();
       count = 0;
     }
     front_LED_blink(count++);
@@ -317,6 +324,7 @@ void *timer_handler(void) {
 }
 void *ipmb_handler(void *bus_num) {
   log(info) << "\n\n======ipmb_handler start =============";
+  plat_ipmb_init();
   ipmb_rx_handler(bus_num);
   log(info) << "======ipmb_handler end =============\n\n";
 }
@@ -396,7 +404,9 @@ void *redfish_handler(void *data) {
 
   if (init_resource()) {
     log(info) << "Redfish resource initialization complete";
+    is_init_resource = true;
     cout << "Redfish resource Init" << endl;
+    cout << "is_init_resource=" << is_init_resource << endl;
   }
 
   http_listener_config listen_config;

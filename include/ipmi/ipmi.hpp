@@ -82,7 +82,7 @@ using namespace std;
 // int lc_flag;
 // int l_interrupt;
 #define THRESH_NOT_AVAILABLE 0xDF
-#define BMC_SLAVE_ADDR 0x08
+#define BMC_SLAVE_ADDR 0x20
 #define SIZE_TIME_STAMP 4
 #define SENSOR_STR_SIZE 20
 #define secs_from_1970_1996 820454400
@@ -814,13 +814,7 @@ struct sdr_hdr_t {
  */
 
 /* Configuration file key works*/
-#define IPMI_DAEMON "Daemon"
-#define IPMI_TIMEOUT "Timeout"
-#define IPMI_PRETIMEOUT "Pretimeout"
-#define IPMI_INTERVAL "Interval"
-#define IPMI_PRETIMEOUTINTERRUPT "INT_Pretimeout"
-#define IPMI_ACTION "Action"
-#define IPMI_PIDFILE "Pidfile"
+
 typedef struct {
   unsigned char timer_use;
   unsigned char timer_actions;
@@ -831,6 +825,7 @@ typedef struct {
   unsigned char present_countdown_lsb;
   unsigned char present_countdown_msb;
   unsigned char pretimeoutInterrupt;
+  int *interval;
   bool Islogging = false;
 
 } bmc_watchdog_param_t;
@@ -843,13 +838,6 @@ typedef struct {
 #define IPMIWatchdogFile1 "/etc/init.d/ipmiwatchdog"
 #define IPMIWatchdogFile2 "/etc/ipmiwatchdog.conf"
 /* Configuration file key works*/
-#define IPMI_DAEMON "Daemon"
-#define IPMI_TIMEOUT "Timeout"
-#define IPMI_PRETIMEOUT "Pretimeout"
-#define IPMI_INTERVAL "Interval"
-#define IPMI_PRETIMEOUTINTERRUPT "INT_Pretimeout"
-#define IPMI_ACTION "Action"
-#define IPMI_PIDFILE "Pidfile"
 
 // event 관련
 
