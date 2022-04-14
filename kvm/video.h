@@ -1,3 +1,5 @@
+#include <linux/fb.h>
+
 /*************************************************************************************/
 //VR08[2]
 typedef enum ast_video_source {
@@ -86,6 +88,19 @@ struct ast_scaling
 	unsigned short	y;
 };
 
+struct ast_capture_mode {
+	unsigned char	engine_idx;					//set 0: engine 0, engine 1
+	unsigned char	differential;					//set 0: full, 1:diff frame
+	unsigned char	mode_change;				//get 0: no, 1:change
+};
+
+struct ast_compression_mode {
+	unsigned char	engine_idx;					//set 0: engine 0, engine 1
+	unsigned char	mode_change;				//get 0: no, 1:change
+	unsigned long	total_size;					//get
+	unsigned long	block_count;					//get
+};
+
 struct fbinfo
 {
 	unsigned short	x;
@@ -104,6 +119,7 @@ struct ast_mode_detection
 /*************************************************************************************/
 #define VIDEOIOC_BASE       'V'
 
+#define AST_VIDEO_RESET							_IO(VIDEOIOC_BASE, 0x0)
 #define AST_VIDEO_IOC_GET_VGA_SIGNAL			_IOR(VIDEOIOC_BASE, 0x1, unsigned char)
 #define AST_VIDEO_GET_MEM_SIZE_IOCRX			_IOR(VIDEOIOC_BASE, 0x2, unsigned long)
 #define AST_VIDEO_GET_JPEG_OFFSET_IOCRX		_IOR(VIDEOIOC_BASE, 0x3, unsigned long)
@@ -113,14 +129,17 @@ struct ast_mode_detection
 #define AST_VIDEO_SET_SCALING					_IOW(VIDEOIOC_BASE, 0x6, struct ast_scaling*)
 
 #define AST_VIDEO_AUTOMODE_TRIGGER			_IOWR(VIDEOIOC_BASE, 0x7, struct ast_auto_mode*)
-#define AST_VIDEO_CAPTURE_TRIGGER				_IOWR(VIDEOIOC_BASE, 0x8, unsigned long)
-#define AST_VIDEO_COMPRESSION_TRIGGER		_IOWR(VIDEOIOC_BASE, 0x9, unsigned long)
+#define AST_VIDEO_CAPTURE_TRIGGER				_IOWR(VIDEOIOC_BASE, 0x8, struct ast_capture_mode*)
+#define AST_VIDEO_COMPRESSION_TRIGGER		_IOWR(VIDEOIOC_BASE, 0x9, struct ast_compression_mode*)
 
 #define AST_VIDEO_SET_VGA_DISPLAY				_IOW(VIDEOIOC_BASE, 0xa, int)
-
+#define AST_VIDEO_SET_ENCRYPTION				_IOW(VIDEOIOC_BASE, 0xb, int)
+#define AST_VIDEO_SET_ENCRYPTION_KEY			_IOW(VIDEOIOC_BASE, 0xc, unsigned char*)
+#define AST_VIDEO_SET_CRT_COMPRESSION		_IOW(VIDEOIOC_BASE, 0xd, struct fb_var_screeninfo*)
 /*************************************************************************************/
 int ast_video_open(void);
 void ast_video_close(void);
+void ast_video_reset(void);
 void ast_video_get_vga_signal(unsigned char *signal);
 void *ast_video_mmap_stream_addr(void);
 void *ast_video_mmap_jpeg_addr(void);
@@ -128,5 +147,10 @@ void ast_video_vga_mode_detection(struct ast_mode_detection* mode_detection);
 void ast_video_set_scaling(struct ast_scaling* set_scaling);
 void ast_video_eng_config(struct ast_video_config* video_config);
 void ast_video_auto_mode_trigger(struct ast_auto_mode* auto_mode);
+void ast_video_capture_mode_trigger(struct ast_capture_mode* capture_mode);
+void ast_video_compression_mode_trigger(struct ast_compression_mode* compression_mode);
 void ast_video_set_vga_display(int *vga_enable);
 int ast_video_compression_trigger(struct ast_video_info *video_info);
+void ast_video_set_encryption(int enable);
+void ast_video_set_encryption_key(unsigned char *key);
+void ast_video_set_crt_compression(	struct fb_var_screeninfo *vinfo);

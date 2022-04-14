@@ -785,6 +785,7 @@ void Ipmiapplication::ipmi_handle_app(uint8_t *request, uint8_t *response,
   switch (cmd) {
   case CMD_APP_SET_WDT:
     app_set_watchdog_timer_params(request, response, res_len);
+    WriteConfigurationFile(ConfigurationFileDir);
     break;
   case CMD_APP_GET_WDT:
     app_get_watchdog_timer_params(request, response, res_len);
@@ -1096,7 +1097,6 @@ void ipmi_handle_rest(rest_req_t *req, uint8_t *response, int *res_len) {
     cout << "\t response=" << (char *)response << endl;
     cout << "\t res_len=" << (*res_len) << endl;
     cout << "\t========== end main call ==========" << endl;
-
     break;
   case CMD_GET_FRUINFO:
     cout << "\t========== get fru info ==========" << endl;
