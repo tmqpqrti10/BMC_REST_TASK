@@ -1,6 +1,5 @@
 #pragma once
 #include "WDT_stdx.hpp"
-using namespace std;
 // int KETI_WDT_define::global_enabler = 0;
 
 int KETI_WDT_define::IPMI_Interval = 10;

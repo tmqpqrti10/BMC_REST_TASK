@@ -60,4 +60,4 @@ public:
   void start();
 };
 
-void *messegequeue(void *keyvalue)
+void *messegequeue(void *keyvalue);

@@ -1,6 +1,5 @@
 
 #pragma once
-#include "WDT_stdx.hpp"
 #include "watchdog.hpp"
 #include <fcntl.h>
 #include <linux/watchdog.h>
@@ -9,6 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/ioctl.h>
+#include <sys/mman.h>
 #include <thread>
 // #include <libexplain/ioctl.h>
 
@@ -317,14 +317,30 @@ static int spool(char *line, int *i, int offset) {
     return (0);
 }
 
-// void *messegequeue(void *keyvalue) {
-//   key_t me_key = (key_t)keyvalue;
+void *KETI_Watchdog::messegequeue(void *pthis) {
+  KETI_Watchdog *instance = (KETI_Watchdog *)pthis;
+  // page fault 방지
+  mlockall(MCL_CURRENT | MCL_FUTURE);
 
-//   try {
+  int msqid_req;
+  if (-1 ==
+      (msqid_req = msgget(
+           instance->ms_key,
+           IPC_CREAT | 0666))) // 요청 큐 전체의 id를 받아옴(대문). 한번만 함
+  {
+    fprintf(stderr, "msgget() msqid_req in WDT failed\n");
+    exit(1);
+  }
+  int index;
+  while (1) {
+    try {
 
-//   } catch (const std::exception &) {
-//   }
-// }
+      this->lockFlag = true;
+      this->WDT_cv.notify_all();
+    } catch (const std::exception &) {
+    }
+  }
+}
 KETI_Watchdog *KETI_Watchdog::ins_KETI_Watchdog = nullptr;
 KETI_Watchdog::KETI_Watchdog() {
   cout << "Load WDT config" << endl;
@@ -338,12 +354,16 @@ KETI_Watchdog *KETI_Watchdog::SingleInstance() {
 
 void KETI_Watchdog::start() {
   cout << "WDT-Service start" << endl;
-  key_t key = "4885";
-  // std::thread t_messegequeue(messegequeue, &key);
+  KETI_Watchdog *pthis = this;
+  pthis->ms_key = 4885;
+  cout << "messge queue 핸들러  start" << endl;
+  std::thread t_messegequeue(this->messegequeue, pthis);
   std::mutex m;
   std::unique_lock<std::mutex> lk(m);
   while (true) {
     this->WDT_cv.wait(lk, [&] { return this->lockFlag; });
+
+    this->lockFlag = false;
   }
-  // t_messegequeue.join();
+  t_messegequeue.join();
 }
