@@ -125,7 +125,8 @@ public:
   void get_lan_config(ipmi_req_t *request, ipmi_res_t *response, uint8_t *res_len);
   void set_lan_config(ipmi_req_t *request, ipmi_res_t *response, uint8_t *res_len);
   void plat_lan_init(void);
-  int prepare_alert_snmp(unsigned char policy_set, char* msg);
+  int prepare_alert_snmp(unsigned char policy_set, char *msg);
+  
 
   /**
   * @brief 네트워크 정보가 변경된 이후 ipmitool 에서 정보를 적용 가능하도록 변경하는 함수\n

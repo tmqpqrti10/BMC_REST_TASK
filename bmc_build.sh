@@ -33,4 +33,4 @@ cp $WDT ../target_sys/firmware/
 
 echo "scp ..."
 
-#sshpass -p $password scp $edge $rest $kvm $smltr $WDT $id@$ip:$path
+sshpass -p $password scp $edge $rest $kvm $smltr $id@$ip:$path

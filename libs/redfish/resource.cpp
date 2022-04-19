@@ -2126,7 +2126,7 @@ json::value Manager::get_json(void) {
   k[U("State")] = json::value::string(U(this->status.state));
   k[U("Health")] = json::value::string(U(this->status.health));
   j[U("Status")] = k;
-  j["GlobaleEnable"] = json::value::number(this->global_enable);
+  j["GlobaleEnable"] = json::value::number(KETI_define::global_enabler);
   j["Actions"] = get_action_info(this->actions);
 
   return j;
@@ -2146,7 +2146,7 @@ bool Manager::load_json(json::value &j) {
     this->datetime = j.at("DateTime").as_string();
     this->datetime_offset = j.at("DateTimeLocalOffset").as_string();
     this->power_state = j.at("PowerState").as_string();
-    this->global_enable = status.at("GlobaleEnable").as_integer();
+    KETI_define::global_enabler = status.at("GlobaleEnable").as_integer();
     status = j.at("Status");
     this->status.state = status.at("State").as_string();
     this->status.health = status.at("Health").as_string();

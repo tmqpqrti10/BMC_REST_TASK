@@ -1,3 +1,4 @@
+#include <bitset>
 #include <ipmi/apps.hpp>
 #include <ipmi/lightning_sensor.hpp>
 #include <ipmi/sensor_define.hpp>
@@ -56,8 +57,6 @@ Ipmichannel ipmiChannel[9] = {
 Ipmiapplication ipmiApplication = Ipmiapplication();
 extern Ipmisession ipmiSession[5];
 extern char uuid_hex[16];
-
-extern uint8_t global_enable;
 
 extern std::mutex redfish_m_mutex[5];
 extern std::condition_variable redfish_m_cond[5];
@@ -503,8 +502,7 @@ void Ipmiapplication::app_set_global_enables(uint8_t *request,
   ipmi_req_t *req = (ipmi_req_t *)request;
   ipmi_res_t *res = (ipmi_res_t *)response;
   uint8_t *data = &res->data[0];
-
-  global_enable = req->data[0];
+  KETI_define::global_enabler = static_cast<int>(req->data[0]);
   //저장
   plat_globalenable_save();
   res->cc = CC_SUCCESS;
@@ -519,7 +517,8 @@ void Ipmiapplication::app_get_global_enables(uint8_t *response,
 
   res->cc = CC_SUCCESS;
 
-  *data++ = global_enable;
+  *data++ = KETI_define::global_enabler;
+  ;
   *res_len = data - &res->data[0];
 }
 
@@ -949,7 +948,7 @@ static void ipmi_handle_storage(ipmi_req_t *request, ipmi_res_t *response,
     break;
     // sel 파트
   case CMD_STORAGE_RSV_SEL:
-    if ((global_enable & 0x8) != 0x8) {
+    if ((KETI_define::global_enabler & 0x8) != 0x8) {
       response->cc = CC_DISABLED;
       break;
     }
@@ -957,7 +956,7 @@ static void ipmi_handle_storage(ipmi_req_t *request, ipmi_res_t *response,
     break;
   case CMD_STORAGE_ADD_SEL:
     cout << "CMD_STORAGE_ADD_SEL" << endl;
-    if ((global_enable & 0x8) != 0x8) {
+    if ((KETI_define::global_enabler & 0x8) != 0x8) {
       response->cc = CC_DISABLED;
       break;
     }
@@ -966,21 +965,21 @@ static void ipmi_handle_storage(ipmi_req_t *request, ipmi_res_t *response,
     cout << "AF storage_add_sel" << endl;
     break;
   case CMD_STORAGE_GET_SEL:
-    if ((global_enable & 0x8) != 0x8) {
+    if ((KETI_define::global_enabler & 0x8) != 0x8) {
       response->cc = CC_DISABLED;
       break;
     }
     storage_get_sel(request, response, res_len);
     break;
   case CMD_STORAGE_DEL_SEL_ENTRY:
-    if ((global_enable & 0x8) != 0x8) {
+    if ((KETI_define::global_enabler & 0x8) != 0x8) {
       response->cc = CC_DISABLED;
       break;
     }
     storage_del_sel_entry(request, response, res_len);
     break;
   case CMD_STORAGE_CLR_SEL:
-    if ((global_enable & 0x8) != 0x8) {
+    if ((KETI_define::global_enabler & 0x8) != 0x8) {
       response->cc = CC_DISABLED;
       break;
     }
@@ -1067,14 +1066,12 @@ void ipmi_handle_rest(rest_req_t *req, uint8_t *response, int *res_len) {
     if (response[0] == NULL) {
       response[0] = authenticate_ipmi(_username, _pwd);
     }
-#if IPMI_USER_SETTING
     if (response[0] == NULL) {
       response[0] = authenticate_ldap(_username, _pwd);
     }
     if (response[0] == NULL) {
       response[0] = authenticate_ad(_username, _pwd);
     }
-#endif
 
     log(info) << "user priv : " << (int)response[0];
     sprintf(response, "%d", response[0]);
@@ -1083,11 +1080,6 @@ void ipmi_handle_rest(rest_req_t *req, uint8_t *response, int *res_len) {
       if (ipmiUser[0].getUserpassword() == _pwd)
         sprintf(response, "%d", 4);
     *res_len = strlen(response);
-    // for (int i = 0; i < 10; i++)
-    // {
-    // 	cout << "USERNAME =" << ipmiUser[i].getUsername() << "PASSWORD=" <<
-    // ipmiUser[i].getUserpassword() << endl;
-    // }
     cout << "\t========== try login call end ==========" << endl;
     break;
   }
@@ -1990,9 +1982,7 @@ void plat_ipmi_init(void) {
     ipmiUser[i] = Ipmiuser();
 
   log(info) << "current user num : " << user_loading();
-
-  global_enable = 8;
-
+  KETI_define::global_enabler = 8;
   // sel dcmi init !
   plat_sel_init();
   plat_dcmi_init();
@@ -4221,7 +4211,6 @@ static void app_get_watchdog_timer_params(unsigned char *request,
  * Editor : KICHEOL PARK
  * Description : set watchdog timer functions
  */
-#include <bitset>
 static void app_set_watchdog_timer_params(unsigned char *request,
                                           unsigned char *response,
                                           unsigned char *res_len) {
