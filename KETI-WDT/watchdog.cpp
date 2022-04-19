@@ -1,159 +1,146 @@
+
+#pragma once
 #include "watchdog.hpp"
-#include <linux/watchdog.h>
-#include <sys/ioctl.h>
-#include <net/if.h>
-#include <string.h>
-#include <stdlib.h>
 #include <fcntl.h>
+#include <linux/watchdog.h>
+#include <net/if.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/ioctl.h>
+#include <sys/mman.h>
+#include <thread>
 // #include <libexplain/ioctl.h>
+
 static bmc_watchdog_param_t g_watchdog_config;
-int IPMI_Interval = 10, IPMI_Timeout = 600, IPMI_Pretimeout = 10,
-    IPMI_PretimeoutInterrupt = 0, IPMI_Action = 1;
-char *IPMI_Daemon = NULL, *IPMI_Pidfile = NULL, *IPMI_debug = NULL;
 
 #define PID_FILE_PATH "/conf/ipmi/WDT.pid"
-int main(int argc, char *argv[]){
+// int main(int argc, char *argv[]) {
 
-    printf("configfile read\n");
-    ReadConfigurationFile(ConfigurationFileDir);
+//   printf("configfile read\n");
+//   ReadConfigurationFile(ConfigurationFileDir);
 
-  FILE *fp ;
- char cmd[128],buffer[512] ;
-  sprintf(cmd, "ps -ef | grep %s", "KETI-WDT");
+//   FILE *fp;
+//   char cmd[128], buffer[512];
+//   sprintf(cmd, "ps -ef | grep %s", "KETI-WDT");
 
-  fp = popen(cmd, "r");
+//   fp = popen(cmd, "r");
 
-  fread(buffer, sizeof(char), sizeof(buffer), fp);
-  // printf("process pid : %s",buffer);
-  pclose(fp);
+//   fread(buffer, sizeof(char), sizeof(buffer), fp);
+//   // printf("process pid : %s",buffer);
+//   pclose(fp);
 
+//   int msqid_req, msqid_rsp;
+//   msgctl((key_t)1038, IPC_RMID, NULL);
 
+//   // req msg queue create
+//   if (-1 == (msqid_req = msgget((key_t)1038, IPC_CREAT | 0666))) {
+//     perror("msgget in req fail");
+//     exit(1);
+//   }
+//   // rsp msg queue create
+//   if (-1 == (msqid_rsp = msgget((key_t)5037, IPC_CREAT | 0666))) {
+//     perror("msgget in rsp fail");
+//     exit(1);
+//   }
 
-  int msqid_req , msqid_rsp;
-  msgctl((key_t)1038, IPC_RMID, NULL);
+//   msq_rsp_t msg_rsp;
+//   msq_rsp_t msg_req;
 
-  //req msg queue create 
-  if ( -1 == ( msqid_req = msgget( (key_t)1038, IPC_CREAT | 0666))){
-    perror ("msgget in req fail");
-    exit(1);
-  }
-  //rsp msg queue create
-  if ( -1 == ( msqid_rsp = msgget( (key_t)5037, IPC_CREAT | 0666))){
-    perror ("msgget in rsp fail");
-    exit(1);
-  }
+//   msg_req.type = 1;
 
-  msq_rsp_t msg_rsp;
-  msq_rsp_t msg_req;
-  
-  msg_req.type = 1;
+//   pid_t pid = getpid();
 
-  pid_t pid = getpid();
+//   int count = 0;
+//   int errsv = errno;
 
-  int count = 0;
-  int errsv = errno;
-   
+//   // thread 사용해야할듯
+//   while (1) {
+//     printf("loop count %d \n", count++);
 
-  //thread 사용해야할듯
- while(1){
-   printf("loop count %d \n",count++);
-  
-  int i, j; // WAITSECONDS 시간만큼만 응답 기다림
-  for (i=0; i<WAITSECONDS; i++) {
-    printf("msg rcv %d \n",msg_rsp.data);
-    if ( -1 == msgrcv( msqid_rsp, &msg_rsp, sizeof( msq_rsp_t) - sizeof( long), 0, 0))
-    {
-    perror("msgrcv in req failed");
-        exit(1); // while문 돌면서 request msg가 오기를 기다림
-    //usleep(500);	
-    //continue;
-    }
-    else break;
+//     int i, j; // WAITSECONDS 시간만큼만 응답 기다림
+//     for (i = 0; i < WAITSECONDS; i++) {
+//       printf("msg rcv %d \n", msg_rsp.data);
+//       if (-1 ==
+//           msgrcv(msqid_rsp, &msg_rsp, sizeof(msq_rsp_t) - sizeof(long), 0,
+//           0)) {
+//         perror("msgrcv in req failed");
+//         exit(1); // while문 돌면서 request msg가 오기를 기다림
+//         // usleep(500);
+//         // continue;
+//       } else
+//         break;
+//     }
 
-  }
+//     printf("msg_rsp %d : \n", msg_rsp.data);
+//     msg_req.type = 1;
+//     strcpy(msg_req.data, "data");
 
-  printf("msg_rsp %d : \n",msg_rsp.data);
-  msg_req.type =1;
-  strcpy(msg_req.data,"data");
- 
- printf("msg snd\n");
-  if ( -1 == msgsnd(msqid_req, &msg_req, sizeof(msq_rsp_t)-sizeof(long), 0))
-  {
-      perror( "msgsnd() in req실패");
-      exit( 1);
-  }
+//     printf("msg snd\n");
+//     if (-1 ==
+//         msgsnd(msqid_req, &msg_req, sizeof(msq_rsp_t) - sizeof(long), 0)) {
+//       perror("msgsnd() in req실패");
+//       exit(1);
+//     }
+//   }
 
- }
-  
-  
+//  int fd = open("/dev/watchdog", O_WRONLY);
+//     int ret = 0;
+//     errsv = errno;
+//     printf("ioctl failed and returned errno %s \n",strerror(errsv));
+//     if (fd == -1) {
+//             perror("watchdog");
+//             exit(EXIT_FAILURE);
+//     }
+//     while (1) {
+//             ret = write(fd, "\0", 1);
+//             if (ret != 1) {
+//                     ret = -1;
+//                     break;
+//             }
+//             sleep(10);
+//     }
+//     close(fd);
+// int fd=open("/dev/watchdog",O_APPEND );
+// int timeout = 90;
+// printf("fileopen %d \n", fd);
+//   errsv = errno;
+//     printf("ioctl failed and returned errno %s \n",strerror(errsv));
 
-  
-   //  int fd = open("/dev/watchdog", O_WRONLY);
-    //     int ret = 0;
-    //     errsv = errno;
-    //     printf("ioctl failed and returned errno %s \n",strerror(errsv));  
-    //     if (fd == -1) {
-    //             perror("watchdog");
-    //             exit(EXIT_FAILURE);
-    //     }
-    //     while (1) {
-    //             ret = write(fd, "\0", 1);
-    //             if (ret != 1) {
-    //                     ret = -1;
-    //                     break;
-    //             }
-    //             sleep(10);
-    //     }
-    //     close(fd);
-    // int fd=open("/dev/watchdog",O_APPEND );
-    // int timeout = 90;
-    // printf("fileopen %d \n", fd);
-    //   errsv = errno;
-    //     printf("ioctl failed and returned errno %s \n",strerror(errsv));
+// ioctl(fd, WDIOC_SETTIMEOUT, &timeout);
+// errsv = errno;
+// printf("ioctl failed and returned errno %s \n",strerror(errsv));
 
-    // ioctl(fd, WDIOC_SETTIMEOUT, &timeout);
-    // errsv = errno;
-    // printf("ioctl failed and returned errno %s \n",strerror(errsv));
+// ioctl(fd, WDIOC_KEEPALIVE, 0);
+// errsv = errno;
+// printf("ioctl failed and returned errno %s \n",strerror(errsv));
 
-    // ioctl(fd, WDIOC_KEEPALIVE, 0);
-    // errsv = errno;
-    // printf("ioctl failed and returned errno %s \n",strerror(errsv));
-    
-    // printf("The timeout was set to %d seconds\n", timeout);
-    // //printf("error_code %d\n",error_code);
-    // // fd=open("/dev/watchdog",O_WRONLY);
-    // int get_timeout;
-    // printf("fileopen\n");
-    // ioctl(fd, WDIOC_GETTIMEOUT, &get_timeout);
-    // errsv = errno;
-    // printf("ioctl failed and returned errno %s \n",strerror(errsv));
-    // close(fd);
-    // printf("The timeout was get to %d seconds\n", get_timeout);
-	
-    // char message[3000];
-    // explain_message_errno_ioctl(message, sizeof(message), fd, WDIOC_SETTIMEOUT, &timeout));
-    // printf("explain %s\n", message);
+// printf("The timeout was set to %d seconds\n", timeout);
+// //printf("error_code %d\n",error_code);
+// // fd=open("/dev/watchdog",O_WRONLY);
+// int get_timeout;
+// printf("fileopen\n");
+// ioctl(fd, WDIOC_GETTIMEOUT, &get_timeout);
+// errsv = errno;
+// printf("ioctl failed and returned errno %s \n",strerror(errsv));
+// close(fd);
+// printf("The timeout was get to %d seconds\n", get_timeout);
 
+// char message[3000];
+// explain_message_errno_ioctl(message, sizeof(message), fd, WDIOC_SETTIMEOUT,
+// &timeout)); printf("explain %s\n", message);
 
-
-
-
-
-
-
-    // unsigned int *pid = getpid();
-    // printf("pid : %d\n",pid);
-    // FILE *fp;
-    // fp = fopen(PID_FILE_PATH, "w+");
-    // printf("file\n");
-    // if(fwrite(&pid, sizeof(unsigned int), 1, fp) <= 0){
-	// 	printf("set_eft_entry_num: fwrite");
-	// 	fclose(fp);
-	// 	return -1;
-	// }
-
-}
+// unsigned int *pid = getpid();
+// printf("pid : %d\n",pid);
+// FILE *fp;
+// fp = fopen(PID_FILE_PATH, "w+");
+// printf("file\n");
+// if(fwrite(&pid, sizeof(unsigned int), 1, fp) <= 0){
+// 	printf("set_eft_entry_num: fwrite");
+// 	fclose(fp);
+// 	return -1;
+// }
+//}
 static int ReadConfigurationFile(char *file) {
   FILE *ReadConfigurationFile;
 
@@ -214,9 +201,9 @@ static int ReadConfigurationFile(char *file) {
           fprintf(stderr, "Ignoring invalid line in config file:\n%s\n",
                   Configurationline);
         } else {
-          IPMI_Interval = atol(Configurationline + i);
+          KETI_WDT_define::IPMI_Interval = atol(Configurationline + i);
 
-          { printf(" IPMI_Interval = %d \n", IPMI_Interval); }
+          { printf(" IPMI_Interval = %d \n", KETI_WDT_define::IPMI_Interval); }
         }
       }
 
@@ -227,10 +214,12 @@ static int ReadConfigurationFile(char *file) {
           fprintf(stderr, "Ignoring invalid line in config file:\n%s\n",
                   Configurationline);
         } else {
-          IPMI_Timeout = atol(Configurationline + i);
-          g_watchdog_config.initial_countdown_lsb = IPMI_Timeout & 0xFF;
-          g_watchdog_config.initial_countdown_msb = IPMI_Timeout >> 8;
-          printf(" IPMI_Timeout = %d \n", IPMI_Timeout);
+          KETI_WDT_define::IPMI_Timeout = atol(Configurationline + i);
+          g_watchdog_config.initial_countdown_lsb =
+              KETI_WDT_define::IPMI_Timeout & 0xFF;
+          g_watchdog_config.initial_countdown_msb =
+              KETI_WDT_define::IPMI_Timeout >> 8;
+          printf(" IPMI_Timeout = %d \n", KETI_WDT_define::IPMI_Timeout);
           printf(" initial_countdown_lsb = %d \n",
                  g_watchdog_config.initial_countdown_msb);
           printf(" initial_countdown_msb = %d \n",
@@ -245,10 +234,10 @@ static int ReadConfigurationFile(char *file) {
           fprintf(stderr, "Ignoring invalid line in config file:\n%s\n",
                   Configurationline);
         } else {
-          IPMI_Pretimeout = atol(Configurationline + i);
+          KETI_WDT_define::IPMI_Pretimeout = atol(Configurationline + i);
 
-          g_watchdog_config.pre_timeout = IPMI_Pretimeout;
-          printf(" IPMI_Pretimeout = %d \n", IPMI_Pretimeout);
+          g_watchdog_config.pre_timeout = KETI_WDT_define::IPMI_Pretimeout;
+          printf(" IPMI_Pretimeout = %d \n", KETI_WDT_define::IPMI_Pretimeout);
         }
       }
 
@@ -256,11 +245,11 @@ static int ReadConfigurationFile(char *file) {
       else if (strncmp(Configurationline + i, IPMI_DAEMON,
                        strlen(IPMI_DAEMON)) == 0) {
         if (spool(Configurationline, &i, strlen(IPMI_DAEMON))) {
-          IPMI_Daemon = NULL;
+          KETI_WDT_define::IPMI_Daemon = NULL;
         } else {
-          IPMI_Daemon = strdup(Configurationline + i);
+          KETI_WDT_define::IPMI_Daemon = strdup(Configurationline + i);
 
-          printf(" IPMI_Daemon = %s \n", IPMI_Daemon);
+          printf(" IPMI_Daemon = %s \n", KETI_WDT_define::IPMI_Daemon);
         }
       }
 
@@ -284,9 +273,9 @@ static int ReadConfigurationFile(char *file) {
           fprintf(stderr, "Ignoring invalid line in config file:\n%s\n",
                   Configurationline);
         } else {
-          IPMI_Action = atol(Configurationline + i);
-          g_watchdog_config.timer_actions = IPMI_Action;
-          printf(" IPMI_Action = %d \n", IPMI_Action);
+          KETI_WDT_define::IPMI_Action = atol(Configurationline + i);
+          g_watchdog_config.timer_actions = KETI_WDT_define::IPMI_Action;
+          printf(" IPMI_Action = %d \n", KETI_WDT_define::IPMI_Action);
         }
       }
 
@@ -294,11 +283,11 @@ static int ReadConfigurationFile(char *file) {
       else if (strncmp(Configurationline + i, IPMI_PIDFILE,
                        strlen(IPMI_PIDFILE)) == 0) {
         if (spool(Configurationline, &i, strlen(IPMI_PIDFILE))) {
-          IPMI_Pidfile = NULL;
+          KETI_WDT_define::IPMI_Pidfile = NULL;
         } else {
-          IPMI_Pidfile = strdup(Configurationline + i);
+          KETI_WDT_define::IPMI_Pidfile = strdup(Configurationline + i);
 
-          printf(" IPMI_Pidfile = %s \n", IPMI_Pidfile);
+          printf(" IPMI_Pidfile = %s \n", KETI_WDT_define::IPMI_Pidfile);
         }
       }
 
@@ -328,3 +317,54 @@ static int spool(char *line, int *i, int offset) {
     return (0);
 }
 
+void *KETI_Watchdog::messegequeue(void *pthis) {
+  KETI_Watchdog *instance = (KETI_Watchdog *)pthis;
+  // page fault 방지
+  mlockall(MCL_CURRENT | MCL_FUTURE);
+
+  int msqid_req;
+  if (-1 ==
+      (msqid_req = msgget(
+           instance->ms_key,
+           IPC_CREAT | 0666))) // 요청 큐 전체의 id를 받아옴(대문). 한번만 함
+  {
+    fprintf(stderr, "msgget() msqid_req in WDT failed\n");
+    exit(1);
+  }
+  int index;
+  while (1) {
+    try {
+
+      instance->lockFlag = true;
+      instance->WDT_cv.notify_all();
+    } catch (const std::exception &) {
+    }
+  }
+}
+KETI_Watchdog *KETI_Watchdog::ins_KETI_Watchdog = nullptr;
+KETI_Watchdog::KETI_Watchdog() {
+  cout << "Load WDT config" << endl;
+  ReadConfigurationFile(ConfigurationFileDir);
+}
+KETI_Watchdog *KETI_Watchdog::SingleInstance() {
+  if (KETI_Watchdog::ins_KETI_Watchdog == nullptr)
+    KETI_Watchdog::ins_KETI_Watchdog = new KETI_Watchdog();
+  return KETI_Watchdog::ins_KETI_Watchdog;
+}
+
+void KETI_Watchdog::start() {
+  cout << "WDT-Service start" << endl;
+  KETI_Watchdog *pthis = this;
+  pthis->ms_key = 4885;
+  cout << "messge queue 핸들러  start" << endl;
+  std::thread t_messegequeue(this->messegequeue, pthis);
+  std::mutex m;
+  std::unique_lock<std::mutex> lk(m);
+  while (true) {
+    this->WDT_cv.wait(lk, [&] { return this->lockFlag; });
+
+    this->lockFlag = false;
+  }
+
+  t_messegequeue.join();
+}

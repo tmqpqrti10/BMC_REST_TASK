@@ -1,11 +1,11 @@
 #pragma once
-#include "WDT_stdx.hpp"
 #include <condition_variable>
 #include <stdint.h>
 #include <string.h>
 #include <sys/msg.h>
 #include <sys/types.h>
 #include <unistd.h>
+
 // #include "ipmi/apps.h"
 /* Configuration file key works*/
 #define IPMI_DAEMON "Daemon"
@@ -50,14 +50,14 @@ static int spool(char *line, int *i, int offset);
 class KETI_Watchdog {
 private:
   bool lockFlag;
-  key_t ms_key;
   KETI_Watchdog();
   ~KETI_Watchdog(){};
   std::condition_variable WDT_cv;
   static KETI_Watchdog *ins_KETI_Watchdog;
-  static void *messegequeue(void *pthis);
 
 public:
   static KETI_Watchdog *SingleInstance();
   void start();
 };
+
+void *messegequeue(void *keyvalue);
