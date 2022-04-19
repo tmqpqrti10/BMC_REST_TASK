@@ -365,5 +365,6 @@ void KETI_Watchdog::start() {
 
     this->lockFlag = false;
   }
+
   t_messegequeue.join();
 }
