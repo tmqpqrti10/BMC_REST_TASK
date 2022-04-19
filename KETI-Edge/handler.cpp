@@ -61,16 +61,13 @@ void Handler::handle_get(http_request _request)
 
         // 여기부턴 만들고 처리
         task_number = generate_task_resource("GET", uri, jv, _request.headers());
-
         response.headers().add("Access-Control-Allow-Origin", "*");
         response.headers().add("Access-Control-Allow-Credentials", "true");
         response.headers().add("Access-Control-Allow-Methods", "POST, GET, OPTIONS, DELETE, PATCH");
         response.headers().add("Access-Control-Max-Age", "3600");
         response.headers().add("Access-Control-Allow-Headers", "Content-Type, Accept, X-Requested-With, remember-me, X-Auth-Token");
         response.headers().add("Access-Control-Expose-Headers", "X-Auth-Token, Location");
-
         // treat_get(_request, response);
-
         // #1 헤더에 X-Auth-Token있는지
         // if(!_request.headers().has("X-Auth-Token"))
         // {
