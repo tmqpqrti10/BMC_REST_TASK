@@ -43,17 +43,17 @@
 #define LDAP_BIN "/conf/ipmi/ldap.bin"
 #define AD_BIN "/conf/ipmi/ad.bin"
 #define AUTH_PATH "/etc/raddb/"
-#include <mongoose.h>
-#include <iostream>
-#include <vector>
-#include <string>
-#include <sys/syscall.h>
-#include <linux/reboot.h>
-#include <cpprest/http_listener.h>
-#include <cpprest/json.h>
-#include <string.h>
 #include "helper.hpp"
 #include "req.hpp"
+#include <cpprest/http_listener.h>
+#include <cpprest/json.h>
+#include <iostream>
+#include <linux/reboot.h>
+#include <mongoose.h>
+#include <string.h>
+#include <string>
+#include <sys/syscall.h>
+#include <vector>
 using namespace std;
 
 /**
@@ -63,14 +63,18 @@ using namespace web;
 using namespace utility;
 #define MG_PORT 8000
 
-static void handle_main_call(string uri, vector<string> uri_tokens, void *ev_data);
+static void handle_main_call(string uri, vector<string> uri_tokens,
+                             void *ev_data);
 static void handle_login_call(struct mg_connection *nc, int ev, void *ev_data);
 static void handle_power_call(struct mg_connection *nc, int ev, void *ev_data);
-static void handle_sysinfo_call(struct mg_connection *nc, int ev, void *ev_data);
+static void handle_sysinfo_call(struct mg_connection *nc, int ev,
+                                void *ev_data);
 static void handle_fru_call(struct mg_connection *nc, int ev, void *ev_data);
 static void handle_sensor_call(struct mg_connection *nc, int ev, void *ev_data);
-static void handle_eventlog_call(struct mg_connection *nc, int ev, void *ev_data);
-static void handle_network_call(struct mg_connection *nc, int ev, void *ev_data);
+static void handle_eventlog_call(struct mg_connection *nc, int ev,
+                                 void *ev_data);
+static void handle_network_call(struct mg_connection *nc, int ev,
+                                void *ev_data);
 static void handle_ntp_call(struct mg_connection *nc, int ev, void *ev_data);
 static void handle_smtp_call(struct mg_connection *nc, int ev, void *ev_data);
 static void handle_ssl_call(struct mg_connection *nc, int ev, void *ev_data);
@@ -79,18 +83,47 @@ static void handle_radius_call(struct mg_connection *nc, int ev, void *ev_data);
 static void handle_user_call(struct mg_connection *nc, int ev, void *ev_data);
 static void handle_sol_call(struct mg_connection *nc, int ev, void *ev_data);
 static void handle_kvm_call(struct mg_connection *nc, int ev, void *ev_data);
-static void handle_setting_call(struct mg_connection *nc, int ev, void *ev_data);
+static void handle_setting_call(struct mg_connection *nc, int ev,
+                                void *ev_data);
 static void handle_usb_call(struct mg_connection *nc, int ev, void *ev_data);
 static void handle_upload_call(struct mg_connection *nc, int ev, void *ev_data);
 static void handle_watt_call(struct mg_connection *nc, int ev, void *ev_data);
-static void handle_warm_reset_call(struct mg_connection *nc, int ev, void *ev_data);
-static void handle_bmc_reset_call(struct mg_connection *nc, int ev, void *ev_data);
+static void handle_warm_reset_call(struct mg_connection *nc, int ev,
+                                   void *ev_data);
+static void handle_bmc_reset_call(struct mg_connection *nc, int ev,
+                                  void *ev_data);
 static void handle_ddns_call(struct mg_connection *nc, int ev, void *ev_data);
 static void handle_ad_call(struct mg_connection *nc, int ev, void *ev_data);
 static void ev_handler(struct mg_connection *nc, int ev, void *ev_data);
 void restful_init(void);
 
-static uint8_t chassis_type_desc[30][50] = {"Unspecified", "Other", "Unknown", "Desktop", "Low Profile Desktop", "Pizza Box", "Mini Tower", "Tower", \
-"Portable", "LapTop", "Notebook", "Hand Held", "Docking Station", "All in One", "Sub Notebook", "Space-saving", "Lunch Box", \
-"Main Server Chassis", "Expansion Chassis", "SubChassis", "Bus Expansion Chassis", "Peripheral Chassis", "RAID Chassis", \
-"Rack Mount Chassis", "Sealed-case PC", "Multi-system Chassis", "CompactPCI", "AdvancedTCA", "Blade", "Blade Enclosure"};
+static uint8_t chassis_type_desc[30][50] = {"Unspecified",
+                                            "Other",
+                                            "Unknown",
+                                            "Desktop",
+                                            "Low Profile Desktop",
+                                            "Pizza Box",
+                                            "Mini Tower",
+                                            "Tower",
+                                            "Portable",
+                                            "LapTop",
+                                            "Notebook",
+                                            "Hand Held",
+                                            "Docking Station",
+                                            "All in One",
+                                            "Sub Notebook",
+                                            "Space-saving",
+                                            "Lunch Box",
+                                            "Main Server Chassis",
+                                            "Expansion Chassis",
+                                            "SubChassis",
+                                            "Bus Expansion Chassis",
+                                            "Peripheral Chassis",
+                                            "RAID Chassis",
+                                            "Rack Mount Chassis",
+                                            "Sealed-case PC",
+                                            "Multi-system Chassis",
+                                            "CompactPCI",
+                                            "AdvancedTCA",
+                                            "Blade",
+                                            "Blade Enclosure"};

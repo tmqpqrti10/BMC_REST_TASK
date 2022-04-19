@@ -23,6 +23,7 @@ SET(
     ${STATIC_LIBS_DIR}/redfish/util.cpp 
     ${STATIC_LIBS_DIR}/util/smbus.cpp
     ${STATIC_LIBS_DIR}/util/pmbus.cpp
+    ${STATIC_LIBS_DIR}/util/KETI_stdx.cpp
 )
 
 ADD_LIBRARY(apps STATIC ${SOURCE_FILES})

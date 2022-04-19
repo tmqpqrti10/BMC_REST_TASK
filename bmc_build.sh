@@ -31,4 +31,4 @@ cp $kvm ../target_sys/firmware/
 
 echo "scp ..."
 
-#sshpass -p $password scp $edge $rest $kvm $smltr $id@$ip:$path
+sshpass -p $password scp $edge $rest $kvm $smltr $id@$ip:$path

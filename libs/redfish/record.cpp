@@ -9,7 +9,6 @@ static set<string> dir_list;
 // ipmi 전용 ///////////////////////
 extern Ipmiuser ipmiUser[MAX_USER];
 extern std::map<uint8_t, std::map<uint8_t, Ipmisdr>> sdr_rec;
-extern uint8_t global_enable;
 ////////////////////////////////
 /**
  * @brief Find uri in to record(unordered_map)
@@ -461,8 +460,6 @@ bool record_load_json(void) {
       Manager *manager = new Manager(this_odata_id);
       if (!manager->load_json(j))
         log(warning) << "load Manager failed";
-
-      global_enable = (u_int8_t)manager->global_enable;
       dependency_object.push_back(manager);
       break;
     }
