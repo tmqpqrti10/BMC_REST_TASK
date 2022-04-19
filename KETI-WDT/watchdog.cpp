@@ -335,8 +335,8 @@ void *KETI_Watchdog::messegequeue(void *pthis) {
   while (1) {
     try {
 
-      this->lockFlag = true;
-      this->WDT_cv.notify_all();
+      instance->lockFlag = true;
+      instance->WDT_cv.notify_all();
     } catch (const std::exception &) {
     }
   }
