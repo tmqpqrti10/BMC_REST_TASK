@@ -3,6 +3,10 @@
 #include <stdint.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <sys/msg.h>
+#include <string.h>
+
+
 // #include "ipmi/apps.h"
 
 /* Configuration file key works*/
@@ -19,6 +23,7 @@
 #define ConfigurationFileDir "/etc/ipmiwatchdog.conf"
 
 #define CONFIG_LINE_LEN 100
+#define WAITSECONDS 100
 
 typedef struct {
   unsigned char timer_use;
@@ -34,5 +39,15 @@ typedef struct {
 
 } bmc_watchdog_param_t;
 
+
+typedef struct {
+  long type;
+  int next;
+  int res_len;
+  unsigned char data[35000];
+  // QSIZE
+} msq_rsp_t;
+
 static int ReadConfigurationFile(char *file);
+static int WriteConfigurationFile(char *file);
 static int spool(char *line, int *i, int offset);

@@ -28,8 +28,9 @@ echo " overlay copy ..."
 cp $edge ../target_sys/firmware/
 cp $rest ../target_sys/firmware/
 cp $kvm ../target_sys/firmware/
+cp $WDT ../target_sys/firmware/
 #cp $psu ../overlay/usr/sbin/
 
 echo "scp ..."
 
-#sshpass -p $password scp $edge $rest $kvm $smltr $id@$ip:$path
+#sshpass -p $password scp $edge $rest $kvm $smltr $WDT $id@$ip:$path

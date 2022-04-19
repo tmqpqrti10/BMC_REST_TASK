@@ -1,5 +1,12 @@
 #include "watchdog.hpp"
-
+#include <linux/watchdog.h>
+#include <sys/ioctl.h>
+#include <net/if.h>
+#include <string.h>
+#include <stdlib.h>
+#include <fcntl.h>
+#include <stdio.h>
+// #include <libexplain/ioctl.h>
 static bmc_watchdog_param_t g_watchdog_config;
 int IPMI_Interval = 10, IPMI_Timeout = 600, IPMI_Pretimeout = 10,
     IPMI_PretimeoutInterrupt = 0, IPMI_Action = 1;
@@ -10,6 +17,131 @@ int main(int argc, char *argv[]){
 
     printf("configfile read\n");
     ReadConfigurationFile(ConfigurationFileDir);
+
+  FILE *fp ;
+ char cmd[128],buffer[512] ;
+  sprintf(cmd, "ps -ef | grep %s", "KETI-WDT");
+
+  fp = popen(cmd, "r");
+
+  fread(buffer, sizeof(char), sizeof(buffer), fp);
+  // printf("process pid : %s",buffer);
+  pclose(fp);
+
+
+
+  int msqid_req , msqid_rsp;
+  msgctl((key_t)1038, IPC_RMID, NULL);
+
+  //req msg queue create 
+  if ( -1 == ( msqid_req = msgget( (key_t)1038, IPC_CREAT | 0666))){
+    perror ("msgget in req fail");
+    exit(1);
+  }
+  //rsp msg queue create
+  if ( -1 == ( msqid_rsp = msgget( (key_t)5037, IPC_CREAT | 0666))){
+    perror ("msgget in rsp fail");
+    exit(1);
+  }
+
+  msq_rsp_t msg_rsp;
+  msq_rsp_t msg_req;
+  
+  msg_req.type = 1;
+
+  pid_t pid = getpid();
+
+  int count = 0;
+  int errsv = errno;
+   
+
+  //thread 사용해야할듯
+ while(1){
+   printf("loop count %d \n",count++);
+  
+  int i, j; // WAITSECONDS 시간만큼만 응답 기다림
+  for (i=0; i<WAITSECONDS; i++) {
+    printf("msg rcv %d \n",msg_rsp.data);
+    if ( -1 == msgrcv( msqid_rsp, &msg_rsp, sizeof( msq_rsp_t) - sizeof( long), 0, 0))
+    {
+    perror("msgrcv in req failed");
+        exit(1); // while문 돌면서 request msg가 오기를 기다림
+    //usleep(500);	
+    //continue;
+    }
+    else break;
+
+  }
+
+  printf("msg_rsp %d : \n",msg_rsp.data);
+  msg_req.type =1;
+  strcpy(msg_req.data,"data");
+ 
+ printf("msg snd\n");
+  if ( -1 == msgsnd(msqid_req, &msg_req, sizeof(msq_rsp_t)-sizeof(long), 0))
+  {
+      perror( "msgsnd() in req실패");
+      exit( 1);
+  }
+
+ }
+  
+  
+
+  
+   //  int fd = open("/dev/watchdog", O_WRONLY);
+    //     int ret = 0;
+    //     errsv = errno;
+    //     printf("ioctl failed and returned errno %s \n",strerror(errsv));  
+    //     if (fd == -1) {
+    //             perror("watchdog");
+    //             exit(EXIT_FAILURE);
+    //     }
+    //     while (1) {
+    //             ret = write(fd, "\0", 1);
+    //             if (ret != 1) {
+    //                     ret = -1;
+    //                     break;
+    //             }
+    //             sleep(10);
+    //     }
+    //     close(fd);
+    // int fd=open("/dev/watchdog",O_APPEND );
+    // int timeout = 90;
+    // printf("fileopen %d \n", fd);
+    //   errsv = errno;
+    //     printf("ioctl failed and returned errno %s \n",strerror(errsv));
+
+    // ioctl(fd, WDIOC_SETTIMEOUT, &timeout);
+    // errsv = errno;
+    // printf("ioctl failed and returned errno %s \n",strerror(errsv));
+
+    // ioctl(fd, WDIOC_KEEPALIVE, 0);
+    // errsv = errno;
+    // printf("ioctl failed and returned errno %s \n",strerror(errsv));
+    
+    // printf("The timeout was set to %d seconds\n", timeout);
+    // //printf("error_code %d\n",error_code);
+    // // fd=open("/dev/watchdog",O_WRONLY);
+    // int get_timeout;
+    // printf("fileopen\n");
+    // ioctl(fd, WDIOC_GETTIMEOUT, &get_timeout);
+    // errsv = errno;
+    // printf("ioctl failed and returned errno %s \n",strerror(errsv));
+    // close(fd);
+    // printf("The timeout was get to %d seconds\n", get_timeout);
+	
+    // char message[3000];
+    // explain_message_errno_ioctl(message, sizeof(message), fd, WDIOC_SETTIMEOUT, &timeout));
+    // printf("explain %s\n", message);
+
+
+
+
+
+
+
+
     // unsigned int *pid = getpid();
     // printf("pid : %d\n",pid);
     // FILE *fp;
@@ -195,3 +327,4 @@ static int spool(char *line, int *i, int offset) {
   else
     return (0);
 }
+
