@@ -1,14 +1,12 @@
-#include <iostream>
-#include <string.h>
+#pragma once
+#include <condition_variable>
 #include <stdint.h>
+#include <string.h>
+#include <sys/msg.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include <sys/msg.h>
-#include <string.h>
-
 
 // #include "ipmi/apps.h"
-
 /* Configuration file key works*/
 #define IPMI_DAEMON "Daemon"
 #define IPMI_TIMEOUT "Timeout"
@@ -17,11 +15,9 @@
 #define IPMI_PRETIMEOUTINTERRUPT "INT_Pretimeout"
 #define IPMI_ACTION "Action"
 #define IPMI_PIDFILE "Pidfile"
-
 #define IPMIWatchdogFile1 "/etc/init.d/ipmiwatchdog"
 #define IPMIWatchdogFile2 "/etc/ipmiwatchdog.conf"
 #define ConfigurationFileDir "/etc/ipmiwatchdog.conf"
-
 #define CONFIG_LINE_LEN 100
 #define WAITSECONDS 100
 
@@ -39,7 +35,6 @@ typedef struct {
 
 } bmc_watchdog_param_t;
 
-
 typedef struct {
   long type;
   int next;
@@ -51,3 +46,18 @@ typedef struct {
 static int ReadConfigurationFile(char *file);
 static int WriteConfigurationFile(char *file);
 static int spool(char *line, int *i, int offset);
+
+class KETI_Watchdog {
+private:
+  bool lockFlag;
+  KETI_Watchdog();
+  ~KETI_Watchdog(){};
+  std::condition_variable WDT_cv;
+  static KETI_Watchdog *ins_KETI_Watchdog;
+
+public:
+  static KETI_Watchdog *SingleInstance();
+  void start();
+};
+
+void *messegequeue(void *keyvalue)
