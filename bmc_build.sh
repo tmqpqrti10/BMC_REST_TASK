@@ -12,6 +12,7 @@ ssh-keyscan -t rsa $ip >>~/.ssh/known_hosts
 edge=output/bin/KETI-Edge
 rest=output/bin/KETI-REST
 psu=output/bin/KETI-PSU
+WDT=output/bin/KETI-WDT
 smltr=smltr/smltr
 kvm=kvm/KETI-KVM
 cmake CMakeLists.txt
@@ -27,8 +28,13 @@ echo " overlay copy ..."
 cp $edge ../target_sys/firmware/
 cp $rest ../target_sys/firmware/
 cp $kvm ../target_sys/firmware/
+cp $WDT ../target_sys/firmware/
 #cp $psu ../overlay/usr/sbin/
 
 echo "scp ..."
 
+<<<<<<< HEAD
 sshpass -p $password scp $edge $rest $kvm $smltr $id@$ip:$path
+=======
+#sshpass -p $password scp $edge $rest $kvm $smltr $WDT $id@$ip:$path
+>>>>>>> 9083a5df12869f00f0a8524c82c8c4a2d211be2d

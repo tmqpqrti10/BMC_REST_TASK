@@ -63,6 +63,8 @@
 using namespace web;
 using namespace utility;
 
+#define WAITSECONDS 100
+
 typedef struct {
   uint8_t mc_device_id;
   uint8_t mc_device_rev;

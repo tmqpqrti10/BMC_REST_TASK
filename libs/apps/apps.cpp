@@ -4514,6 +4514,58 @@ static int WriteConfigurationFile(char *file) {
     printf("file not exist");
   }
   writeFile.close();
+  
+  int msqid_req , msqid_rsp;
+
+  msgctl((key_t)5037, IPC_RMID, NULL);
+  //req msg queue create 
+  if ( -1 == ( msqid_req = msgget( (key_t)5037, IPC_CREAT | 0666))){
+    perror ("msgget in req fail");
+    exit(1);
+  }
+  //rsp msg queue create
+  if ( -1 == ( msqid_rsp = msgget( (key_t)1038, IPC_CREAT | 0666))){
+    perror ("msgget in rsp fail");
+    exit(1);
+  }
+
+
+
+  msq_rsp_t msg_rsp;
+  msq_rsp_t msg_req;
+
+  // msg_req.pre_timeout = 20;
+  // msg_req.interval = 500;
+  // msg_req.pretimeoutInterrupt = 3000;
+  msg_req.type = 2;
+  strcpy(msg_req.data,"data");
+
+  // msg_req.type = 1;
+
+  // //watchdog send
+  printf("msg snd\n");
+  if ( -1 == msgsnd(msqid_req, &msg_req, sizeof(msq_rsp_t)-sizeof(long), 0))
+  {
+      perror( "msgsnd() in req실패");
+      exit( 1);
+  }
+  
+  printf("msg snd clear\n");
+  // int offset = 0;
+  int i, j; // WAITSECONDS 시간만큼만 응답 기다림
+  for (i=0; i<WAITSECONDS; i++) {
+    printf("msg rcv %d \n",msg_rsp.data);
+    if ( -1 == msgrcv( msqid_rsp, &msg_rsp, sizeof( msq_rsp_t) - sizeof( long), 0, 0))
+    {
+    perror("msgrcv in req failed");
+        exit(1); // while문 돌면서 request msg가 오기를 기다림
+    //usleep(500);	
+    //continue;
+    }
+    else break;
+
+  }
+
   return 1;
 }
 /**
