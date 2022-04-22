@@ -4657,6 +4657,5 @@ void make_sensor(SensorMake _sm, uint16_t _flag) {
     // cout << "0100 0000 0000 0000" << endl;
     sensor->status.health = _sm.status.health;
   }
-  cout << "7" << endl;
   resource_save_json(sensor);
 }

@@ -7,6 +7,7 @@
 void *kcs_handler(void *data);
 void *dcmi_power_handler(void *data);
 void *lanplus_handler(void *data);
+
 void *redfish_handler(void *data);
 void *restserver_handler(void *data);
 void *ipmievent_handler(void *data);
@@ -17,3 +18,7 @@ void *timer_handler(void);
 void *ipmb_handler(void *bus_num);
 
 void sel_generater(void);
+
+namespace SOL {
+void *sol_handler(void *data);
+}

@@ -3,7 +3,7 @@
 ip=10.0.6.104
 id=root
 password=ketilinux
-path=/usr/sbin
+path=/firmware
 
 ssh-keygen -f "/root/.ssh/known_hosts" -R "$ip"
 ssh-keyscan -t rsa $ip >>~/.ssh/known_hosts
@@ -13,6 +13,7 @@ edge=output/bin/KETI-Edge
 rest=output/bin/KETI-REST
 psu=output/bin/KETI-PSU
 WDT=output/bin/KETI-WDT
+SERIAL=output/bin/KETI-Serial
 smltr=smltr/smltr
 kvm=kvm/KETI-KVM
 cmake CMakeLists.txt
@@ -29,6 +30,7 @@ cp $edge ../target_sys/firmware/
 cp $rest ../target_sys/firmware/
 cp $kvm ../target_sys/firmware/
 cp $WDT ../target_sys/firmware/
+cp $SERIAL ../target_sys/firmware/
 #cp $psu ../overlay/usr/sbin/
 
 echo "scp ..."

@@ -554,9 +554,12 @@ void init_ethernet(Collection *ethernet_collection, string _id) {
 
   // for nameserver
   vector<string> resolv_data;
-  resolv_data = string_split(get_popen_string("more /etc/resolv.conf"), ' ');
-  ethernet->name_servers.push_back(resolv_data[1]);
-  ethernet->name_servers.push_back(resolv_data[2]);
+  string back = get_popen_string("more /etc/resolv.conf");
+  if (back.length() > 1) {
+    resolv_data = string_split(back, ' ');
+    ethernet->name_servers.push_back(resolv_data[1]);
+    ethernet->name_servers.push_back(resolv_data[2]);
+  }
   if (ethernet->name_servers.size() == 2) {
     ethernet->name_servers.push_back("::ffff:808:404");
     ethernet->name_servers.push_back("::ffff:808:808");
@@ -1610,8 +1613,6 @@ void init_account_service(AccountService *account_service) {
         roled = "Unknown";
         break;
       }
-
-
 
       Account *account = new Account(account_odata_id, account_id, roled);
       account->id = account_id;

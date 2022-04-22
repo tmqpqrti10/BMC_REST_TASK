@@ -2,6 +2,7 @@
 #include <ipmi/apps.hpp>
 #include <ipmi/lightning_sensor.hpp>
 #include <ipmi/sensor_define.hpp>
+#include <ipmi/sol.hpp>
 #include <math.h>
 #include <redfish/resource.hpp>
 #include <sqlite3.h>
@@ -78,7 +79,7 @@ Ipmiapplication::Ipmiapplication() {
   g_watchdog_config.timer_actions = IPMI_Action;
   g_watchdog_config.pre_timeout = IPMI_Pretimeout;
   //*g_watchdog_config.interval = 19;
-  WriteConfigurationFile(ConfigurationFileDir);
+  // WriteConfigurationFile(ConfigurationFileDir);
   this->g_mc_device.mc_device_id = 0x20;
   this->g_mc_device.mc_device_rev = 0x01;
   this->g_mc_device.mc_fw_version[0] = 0x01;
@@ -850,6 +851,16 @@ void Ipmiapplication::ipmi_handle_app(uint8_t *request, uint8_t *response,
     break;
   case CMD_APP_GET_SYS_INFO_PARAMS:
     break;
+  case CMD_APP_SOL_ACTIVE_PAYLOAD:
+    log(info) << "start CMD_APP_SOL_ACTIVE_PAYLOAD";
+    (SerialOverLan::Instance().app_active_payload(req, res, res_len));
+    log(info) << "end CMD_APP_SOL_ACTIVE_PAYLOAD";
+    break;
+  case CMD_APP_SOL_DEACTIVATE_PAYLOAD:
+    log(info) << "start CMD_APP_SOL_DEACTIVATE_PAYLOAD";
+    (SerialOverLan::Instance().app_deactive_payload(req, res, res_len));
+    log(info) << "end CMD_APP_SOL_DEACTIVATE_PAYLOAD";
+    break;
   default:
     res->cc = 0xfe;
     break;
@@ -1024,6 +1035,20 @@ static void ipmi_handle_transport(ipmi_req_t *request, ipmi_res_t *response,
   case CMD_TRANSPORT_GET_LAN_CONFIG:
     ipmiNetwork[r_chan].get_lan_config(request, response, res_len);
     break;
+  case CMD_TRANSPORT_GET_SOL_CONFIG_PARAMETERS: {
+    log(info) << "=======CMD_TRANSPORT_GET_SOL_CONFIG_PARAMETERS ========";
+    SerialOverLan::Instance().transport_get_sol_config_params(request, response,
+                                                              res_len);
+    log(info) << "=======end ========";
+    break;
+  case CMD_TRANSPORT_SET_SOL_CONFIG_PARAMETERS: {
+    log(info) << "=======CMD_TRANSPORT_GET_SOL_CONFIG_PARAMETERS ========";
+    SerialOverLan::Instance().transport_set_sol_config_params(request, response,
+                                                              res_len);
+    log(info) << "=======end ========";
+    break;
+  }
+  }
   default:
     response->cc = CC_INVALID_CMD;
     break;
@@ -1872,7 +1897,7 @@ static void ipmi_handle_chassis(ipmi_req_t *request, ipmi_res_t *response,
 
 uint8_t ipmi_handle(uint8_t bRMCP, uint8_t *request, uint8_t req_len,
                     uint8_t *response, uint8_t *res_len) {
-  cout << "ipmi_handle" << endl;
+  cout << "=========ipmi_handle==========" << endl;
   ipmi_req_t *req = (ipmi_req_t *)request;
   ipmi_res_t *res = (ipmi_res_t *)response;
   uint8_t netfn;
@@ -1886,13 +1911,12 @@ uint8_t ipmi_handle(uint8_t bRMCP, uint8_t *request, uint8_t req_len,
   res->cmd = req->cmd;
   res->cc = 0xFF;
   *res_len = 0;
-  cout << "ipmi_handle:netfn = " << (int)netfn << endl;
-  cout << "ipmi_handle:req cmd = " << (int)req->cmd << endl;
-  cout << "ipmi_handle:res cmd = " << (int)res->cmd << endl;
+  cout << "ipmi_handle:netfn = " << std::hex << (int)netfn << endl;
+  cout << "ipmi_handle:req cmd = " << std::hex << (int)req->cmd << endl;
+  cout << "ipmi_handle:res cmd = " << std::hex << (int)res->cmd << endl;
   // cout<<"ipmi_handle:req_t data = ";;
   // for(int i=0; i<req->netfn_lun;i++)
   // 	cout<<(char)req->data[i];
-  cout << "" << endl;
   switch (netfn) {
   case NETFN_CHASSIS_REQ:
     res->netfn_lun = NETFN_CHASSIS_RES << 2;
@@ -4514,57 +4538,6 @@ static int WriteConfigurationFile(char *file) {
     printf("file not exist");
   }
   writeFile.close();
-  
-  int msqid_req , msqid_rsp;
-
-  msgctl((key_t)5037, IPC_RMID, NULL);
-  //req msg queue create 
-  if ( -1 == ( msqid_req = msgget( (key_t)5037, IPC_CREAT | 0666))){
-    perror ("msgget in req fail");
-    exit(1);
-  }
-  //rsp msg queue create
-  if ( -1 == ( msqid_rsp = msgget( (key_t)1038, IPC_CREAT | 0666))){
-    perror ("msgget in rsp fail");
-    exit(1);
-  }
-
-
-
-  msq_rsp_t msg_rsp;
-  msq_rsp_t msg_req;
-
-  // msg_req.pre_timeout = 20;
-  // msg_req.interval = 500;
-  // msg_req.pretimeoutInterrupt = 3000;
-  msg_req.type = 2;
-  strcpy(msg_req.data,"data");
-
-  // msg_req.type = 1;
-
-  // //watchdog send
-  printf("msg snd\n");
-  if ( -1 == msgsnd(msqid_req, &msg_req, sizeof(msq_rsp_t)-sizeof(long), 0))
-  {
-      perror( "msgsnd() in req실패");
-      exit( 1);
-  }
-  
-  printf("msg snd clear\n");
-  // int offset = 0;
-  int i, j; // WAITSECONDS 시간만큼만 응답 기다림
-  for (i=0; i<WAITSECONDS; i++) {
-    printf("msg rcv %d \n",msg_rsp.data);
-    if ( -1 == msgrcv( msqid_rsp, &msg_rsp, sizeof( msq_rsp_t) - sizeof( long), 0, 0))
-    {
-    perror("msgrcv in req failed");
-        exit(1); // while문 돌면서 request msg가 오기를 기다림
-    //usleep(500);	
-    //continue;
-    }
-    else break;
-
-  }
 
   return 1;
 }
