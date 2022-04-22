@@ -23,7 +23,7 @@
 // ServiceRoot *g_service_root;
 
 #define RMCP_UDP_PORT 623
-
+using namespace SOL;
 void exit_cleanup(int signo) {
   std::cout << "Cleanup ... " << std::endl;
   mutex_destroy();
@@ -64,8 +64,9 @@ int main(void) {
   signal(SIGKILL, exit_cleanup);
   signal(SIGTERM, exit_cleanup);
 
-  if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) < 0)
-    ;
+  if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) < 0) {
+    log(info) << "keti-edge erorr :  setsockopt SOL_SOCKET ";
+  }
 
   if (bind(sockfd, (struct sockaddr *)&server, sizeof(server)) == -1) {
     std::cout << "Socket bind error" << std::endl;

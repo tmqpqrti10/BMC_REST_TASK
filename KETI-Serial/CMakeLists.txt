@@ -5,7 +5,7 @@ cmake_minimum_required(
 
 # Project information
 project(
-    KETI-Edge 
+    KETI-SERIAL
     LANGUAGES CXX
     VERSION 1.0.0
 )
@@ -28,29 +28,34 @@ set(GCC ${CROSS_COMPILE}gcc)
 set(GPP ${CROSS_COMPILE}g++)
 set(CMAKE_C_COMPILER ${GCC})
 set(CMAKE_CXX_COMPILER ${GPP})
-set(CMAKE_CXX_FLAGS " -Wall -w -DBOOST_LOG_DYN_LINK -Wno-psabi -fpermissive -DMG_ENABLE_SSL -DMG_ENABLE_THREADS -DMG_ENABLE_HTTP_WEBSOCKET=0 -DMG_ENABLE_HTTP_STREAMING_MULTIPART -pthread -std=c++11") 
+set(CMAKE_CXX_FLAGS "-O1 -Wall -w -DBOOST_LOG_DYN_LINK -Wno-psabi -fpermissive -DMG_ENABLE_SSL -DMG_ENABLE_THREADS -DMG_ENABLE_HTTP_WEBSOCKET=0 -DMG_ENABLE_HTTP_STREAMING_MULTIPART -pthread -std=c++11") 
 set(CMAKE_CXX_FLAGS_DEBUG "-O3 -g")
 message(STATUS "Compiler")
 message(STATUS " - ID       \t: ${CMAKE_CXX_COMPILER_ID}")
 message(STATUS " - Version  \t: ${CMAKE_CXX_COMPILER_VERSION}")
 message(STATUS " - Path     \t: ${CMAKE_CXX_COMPILER}")
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_DIR}/output/bin)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_DIR}/output/libs)
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_DIR}/output/libs)
+set(
+    OUTPUT
+    KETI-Serial
+)
 
-# Linkinking
-## Header
+set(
+    SOURCE_FILES
+    KETI-Serial.cpp
+    WDT_stdx.cpp
+)
+
+
+set(PROJECT_DIR ${ROOT_DIR}/source/AST2600_BMC)
+set(INC_DIR ${PROJECT_DIR}/include)
+set(LIB_DIR ${ROOT_DIR}/libs)
+set(STATIC_LIBS_DIR ${PROJECT_DIR}/libs)
+
+set(CMAKE_CXX_FLAGS " -lcrypto -lm -lrt -lpthread -Wall -DBOOST_LOG_DYN_LIN -g -w -fpermissive -w -DMG_ENABLE_SSL -pthread -g -std=c++11") 
+
 include_directories(
-    ${Buildroot_INCLUDE_DIR} 
+    ${INC_DIR}
 )
 
-## Source
-link_directories(
-    ${Buildroot_LIBRARY_DIR}
-)
-
-# Target setting
-add_subdirectory(${STATIC_LIBS_DIR})
-add_subdirectory(${EDGE_DIR})
-add_subdirectory(KETI-REST)
+add_executable(${OUTPUT} ${SOURCE_FILES})

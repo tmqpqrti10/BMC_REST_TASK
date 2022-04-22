@@ -6,8 +6,6 @@
 #include <ipmi/ipmi.hpp>
 #include <ipmi/lightning_sensor.hpp>
 #include <util/smbus.hpp>
-// g_TMAX 사용
-#include <ipmi/snrctrl.hpp>
 typedef unsigned char u8;
 typedef unsigned int u32;
 typedef unsigned short u16;

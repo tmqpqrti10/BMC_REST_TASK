@@ -56,7 +56,6 @@
 #include "ipmi/sensor_define.hpp"
 #include "ipmi/session.hpp"
 #include "ipmi/setting_service.hpp"
-#include "ipmi/snrctrl.hpp"
 #include "ipmi/user.hpp"
 #include <ipmi/dcmi.hpp>
 

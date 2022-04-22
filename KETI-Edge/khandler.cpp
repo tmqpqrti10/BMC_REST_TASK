@@ -18,13 +18,14 @@
 #include <ipmi/ipmb.hpp>
 #include <ipmi/lightning_sensor.hpp>
 #include <ipmi/sdr.hpp>
+#include <ipmi/sol.hpp>
 unsigned int f_fan_error;
 #define ETH_COUNT 4
 bool is_init_resource;
 extern Ipminetwork ipmiNetwork[ETH_COUNT];
 extern Dcmiconfiguration dcmiConfiguration;
 extern std::map<uint8_t, std::map<uint8_t, Ipmisdr>> sdr_rec;
-
+using namespace SOL;
 unique_ptr<Handler> g_listener;
 unordered_map<string, Resource *> g_record;
 src::severity_logger<severity_level> g_logger;
@@ -49,6 +50,7 @@ uint8_t ERROR_CASE_2[48] = {6, 0, 255, 7, 6, 16, 0, 0, 0,   0,   0,   0,
                             0, 0, 32,  0, 0, 0,  0, 0, 164, 163, 162, 160,
                             0, 0, 0,   8, 1, 0,  0, 0, 1,   0,   0,   8,
                             1, 0, 0,   0, 2, 0,  0, 8, 1,   0,   0,   0};
+
 // char ssdp_buff[] = "M-SEARCH * HTTP/1.1\r\n"\
 // "HOST: 239.255.255.250:1900\r\n"\
 // "MAN: \"ssdp:discover\"\r\n"\
@@ -293,7 +295,7 @@ void *timer_handler(void) {
   int count = 0;
   while (true) {
     if (is_init_resource == false) {
-      cout << "timer_handler: continue" << endl;
+      log(info) << "timer_handler: continue" << endl;
       delay(100);
       continue;
     }
@@ -313,15 +315,336 @@ void *timer_handler(void) {
       // log(info)<<"timer_handler count="<<count;
       log(info) << "update_sensor_reading" << endl;
       update_sensor_reading();
-      cout << "ipmb test cpu temp" << endl;
+      // cout << "ipmb test cpu temp" << endl;
       // ipmb_get_cpu_temp();
-      ipmb_get_deviceid();
+      // ipmb_get_deviceid();
       count = 0;
     }
     front_LED_blink(count++);
     sleep(1);
   }
 }
+
+namespace SOL {
+Rmcppacket rmcpSolPacket;
+int crnl_mapping = 0;
+int initial_speed = 115200;
+int bytes_recved;
+int bytes_sent;
+int sol_write_fd = 0;
+void init_comm(struct termios *pts) {
+  /* some things we want to set arbitrarily */
+  pts->c_lflag &= ~ICANON;
+  pts->c_lflag &= ~(ECHO | ECHOCTL | ECHONL);
+  pts->c_cflag |= HUPCL;
+  pts->c_cc[VMIN] = 1;
+  pts->c_cc[VTIME] = 0;
+
+  /* Standard CR/LF handling: this is a dumb terminal.
+   * Do no translation:
+   *  no NL -> CR/NL mapping on output, and
+   *  no CR -> NL mapping on input.
+   */
+  pts->c_oflag &= ~ONLCR; /* set NO CR/NL mapping on output */
+  crnl_mapping = 0;
+
+  /*pts->c_oflag |= ONLCR;
+  crnl_mapping = 1;*/
+  pts->c_iflag &= ~ICRNL; /* set NO CR/NL mapping on input */
+
+  /* set no flow control by default */
+  pts->c_cflag &= ~CRTSCTS;
+  pts->c_iflag &= ~(IXON | IXOFF | IXANY);
+
+  /* set hardware flow control by default */
+  /*pts->c_cflag |= CRTSCTS;
+  pts->c_iflag &= ~(IXON | IXOFF | IXANY);*/
+
+  /* set 115200 bps speed by default */
+  cfsetospeed(pts, initial_speed);
+  cfsetispeed(pts, initial_speed);
+}
+// void *sol_handler(void *arg) {
+//   int sockfd = *((int *)data);
+//   int byte_recv;
+//   int check_error = 1;
+//   int ndcontinue = 1;
+//   int continuetwise = 1;
+//   uint8_t mesg[1000];
+//   struct sockaddr_in clientAddr;
+//   socklen_t len;
+//   ipmi_inprogress = 0;
+//   while (true) {
+//     len = sizeof(clientAddr);
+//     byte_recv =
+//         recvfrom(sockfd, mesg, 1000, 0, (struct sockaddr *)&clientAddr,
+//         &len);
+//     std::vector<uint8_t> packet_in(mesg, mesg + byte_recv);
+//     std::vector<uint8_t> packet_out;
+//     rmcpInPacket.setRmcpInformation(packet_in, clientAddr);
+//   }
+// }
+// void *sol_handler(void *arg) {
+//   sol_struct_t *sol_struct = (sol_struct_t *)arg;
+//   SerialOverLan::Instance().set_sol_struct(sol_struct);
+//   struct pollfd fds;
+//   int sockfd = sol_struct->sockfd;
+//   struct sockaddr_in sol_cliaddr = sol_struct->sol_cliaddr;
+//   int sefd, rdcnt, leninbuf, tempsize, split, splited = 0;
+//   int rescloc = 0;
+//   int fescloc = 0;
+//   int MAX_BUFFER_IN = 200;
+//   char in_buf[255] = {0};
+//   char tmp_buf[255];
+//   int i, j, fst, snd, sol_length, sizeofsenddata = 0;
+//   int poll_state = 0;
+//   unsigned char packet_in_dummy[6] = {0x06, 0x00, 0xff, 0x07, 0x06, 0xc2};
+//   unsigned char clear_entire_screen[4] = {0x1b, 0x5b, 0x32, 0x4A};
+//   struct termios ttyS2;
+//   fd_set ready;
+//   char trun_buf_front[255];
+//   char trun_buf_rear[255];
+//   unsigned char temp_write_buffer_1[255];
+//   unsigned char temp_write_buffer_2[255];
+//   unsigned char sequences = 0;
+//   sefd = open(SerialOverLan::Instance().DEVNAME.c_str(), O_RDWR);
+//   if (sefd < 0) {
+//     log(info) << "SOL Handler error not open file :"
+//               << SerialOverLan::Instance().DEVNAME;
+//   }
+//   fds.fd = sefd; // serial connection registration
+//   fds.events = POLLIN;
+//   fds.revents = 0;
+
+//   tcgetattr(sefd, &ttyS2);
+//   init_comm(&ttyS2);
+//   tcsetattr(sefd, TCSANOW, &ttyS2);
+
+//   memset(SerialOverLan::Instance().sol_buf, 0,
+//          sizeof(SerialOverLan::Instance().sol_buf));
+//   memset(tmp_buf, 0, sizeof(tmp_buf));
+//   //    printf("sol handler run!\n");
+//   if (sefd < 0) {
+//     // pthread_exit(NULL);
+//     log(info) << "sol handler error sefd not open";
+//   }
+//   while (1) {
+//     FD_ZERO(&ready);
+
+//     FD_SET(sefd, &ready);
+
+//     if (FD_ISSET(sefd, &ready)) {
+
+//       poll_state = poll((struct pollfd *)&fds, 1, 50);
+
+//       if (poll_state > 0 && (fds.revents & POLLIN)) {
+//         /* pf has characters for us */
+//         rdcnt = read(sefd, in_buf, MAX_BUFFER_IN);
+//         // pthread_mutex_lock(&m_sol);
+
+//         if (rdcnt > 0) {
+//           SerialOverLan::Instance().sol_rdcnt = rdcnt;
+
+//           protocol_data *packet_in = malloc(sizeof(protocol_data));
+//           protocol_data *packet_out = malloc(sizeof(protocol_data));
+
+//           leninbuf = strlen(in_buf);
+//           if (strrchr(in_buf, 0x1b)) {
+//             rescloc = strrchr(in_buf, 0x1b) - in_buf;
+//             fescloc = strchr(in_buf, 0x1b) - in_buf;
+//           } else {
+//             // printf("there is no escape code!\n");
+//             rescloc = 0;
+//             fescloc = 0;
+//           }
+
+//           tempsize = leninbuf - rescloc;
+
+//           if (leninbuf >= MAX_BUFFER_IN) {
+//             split = 1;
+//           } else {
+//             split = 0;
+//           }
+
+//           packet_in->data = packet_in_dummy;
+//           packet_in->length = sizeof(packet_in_dummy);
+
+//           if (split == 1 && splited == 1) {
+
+//             if (in_buf[0] != 0x1b) {
+//               memset(trun_buf_rear, 0, sizeof(trun_buf_rear));
+//               memcpy(trun_buf_rear, in_buf, sizeof(unsigned char) * fescloc);
+//               strcat(trun_buf_front, trun_buf_rear);
+//             } else {
+//             }
+//             memset(SerialOverLan::Instance().sol_buf, 0,
+//                    sizeof(SerialOverLan::Instance().sol_buf));
+//             memcpy(SerialOverLan::Instance().sol_buf, trun_buf_front,
+//                    sizeof(unsigned char) * (strlen(trun_buf_front)));
+//             packet_out =
+//                 rmcp_process_packet(packet_in, (struct sockaddr
+//                 *)&sol_cliaddr);
+
+//             if (packet_out->length > 0) {
+//               sizeofsenddata =
+//                   sendto(sockfd, packet_out->data, packet_out->length, 0,
+//                          (struct sockaddr *)&sol_cliaddr,
+//                          sizeof(sol_cliaddr));
+//             } else {
+//             }
+//             memset(tmp_buf, 0, sizeof(tmp_buf));
+//             memset(SerialOverLan::Instance().sol_buf, 0,
+//                    sizeof(SerialOverLan::Instance().sol_buf));
+//             memcpy(tmp_buf, in_buf + fescloc,
+//                    sizeof(unsigned char) * (rescloc - fescloc));
+//             memcpy(SerialOverLan::Instance().sol_buf, tmp_buf,
+//                    sizeof(unsigned char) * strlen(tmp_buf));
+//             packet_out =
+//                 rmcp_process_packet(packet_in, (struct sockaddr
+//                 *)&sol_cliaddr);
+
+//             if (packet_out->length > 0)
+//               sizeofsenddata =
+//                   sendto(sockfd, packet_out->data, packet_out->length, 0,
+//                          (struct sockaddr *)&sol_cliaddr,
+//                          sizeof(sol_cliaddr));
+
+//             memset(trun_buf_front, 0, sizeof(trun_buf_front));
+//             for (i = 0; i < tempsize; i++)
+//               trun_buf_front[i] = in_buf[i + rescloc];
+
+//           } else if (split == 1 && splited == 0) {
+//             memset(tmp_buf, 0, sizeof(tmp_buf));
+//             memset(SerialOverLan::Instance().sol_buf, 0,
+//                    sizeof(SerialOverLan::Instance().sol_buf));
+//             memcpy(tmp_buf, in_buf, sizeof(unsigned char) * rescloc);
+//             memcpy(SerialOverLan::Instance().sol_buf, tmp_buf,
+//                    sizeof(unsigned char) * strlen(tmp_buf));
+//             packet_out =
+//                 rmcp_process_packet(packet_in, (struct sockaddr
+//                 *)&sol_cliaddr);
+
+//             if (packet_out->length > 0)
+//               sizeofsenddata =
+//                   sendto(sockfd, packet_out->data, packet_out->length, 0,
+//                          (struct sockaddr *)&sol_cliaddr,
+//                          sizeof(sol_cliaddr));
+
+//             memset(trun_buf_front, 0, sizeof(trun_buf_front));
+//             for (i = 0; i < tempsize; i++)
+//               trun_buf_front[i] = in_buf[i + rescloc];
+
+//           } else if (split == 0 && splited == 1) {
+
+//             if (in_buf[0] != 0x1b) {
+//               memset(trun_buf_rear, 0, sizeof(trun_buf_rear));
+//               memcpy(trun_buf_rear, in_buf, sizeof(unsigned char) * fescloc);
+//               strcat(trun_buf_front, trun_buf_rear);
+//             } else {
+//             }
+//             memset(SerialOverLan::Instance().sol_buf, 0,
+//                    sizeof(SerialOverLan::Instance().sol_buf));
+//             memcpy(SerialOverLan::Instance().sol_buf, trun_buf_front,
+//                    sizeof(unsigned char) * (strlen(trun_buf_front)));
+//             packet_out =
+//                 rmcp_process_packet(packet_in, (struct sockaddr
+//                 *)&sol_cliaddr);
+
+//             if (packet_out->length > 0) {
+//               sizeofsenddata =
+//                   sendto(sockfd, packet_out->data, packet_out->length, 0,
+//                          (struct sockaddr *)&sol_cliaddr,
+//                          sizeof(sol_cliaddr));
+//             } else {
+//             }
+//             memset(tmp_buf, 0, sizeof(tmp_buf));
+//             memset(SerialOverLan::Instance().sol_buf, 0,
+//                    sizeof(SerialOverLan::Instance().sol_buf));
+//             memcpy(tmp_buf, in_buf + fescloc,
+//                    sizeof(unsigned char) * (leninbuf - fescloc));
+//             memcpy(SerialOverLan::Instance().sol_buf, tmp_buf,
+//                    sizeof(unsigned char) * strlen(tmp_buf));
+//             packet_out =
+//                 rmcp_process_packet(packet_in, (struct sockaddr
+//                 *)&sol_cliaddr);
+
+//             if (packet_out->length > 0)
+//               sizeofsenddata =
+//                   sendto(sockfd, packet_out->data, packet_out->length, 0,
+//                          (struct sockaddr *)&sol_cliaddr,
+//                          sizeof(sol_cliaddr));
+
+//           } else if (split == 0 && splited == 0) {
+//             memset(SerialOverLan::Instance().sol_buf, 0,
+//                    sizeof(SerialOverLan::Instance().sol_buf));
+//             memcpy(SerialOverLan::Instance().sol_buf, in_buf,
+//                    sizeof(unsigned char) * leninbuf);
+//             packet_out =
+//                 rmcp_process_packet(packet_in, (struct sockaddr
+//                 *)&sol_cliaddr);
+
+//             if (packet_out->length > 0)
+//               sizeofsenddata =
+//                   sendto(sockfd, packet_out->data, packet_out->length, 0,
+//                          (struct sockaddr *)&sol_cliaddr,
+//                          sizeof(sol_cliaddr));
+
+//           } else {
+//             //         printf("case ERROR");
+//           }
+
+//           if (split) {
+//             splited = 1;
+//           } else {
+//             splited = 0;
+//           }
+
+//           free(packet_in);
+//           free(packet_out);
+//         }
+//         memset(in_buf, 0, sizeof(in_buf));
+//       }
+
+//       else {
+//         if (strlen(SerialOverLan::Instance().sol_write_buf) > 0) {
+
+//           if ((memcmp(temp_write_buffer_1,
+//                       SerialOverLan::Instance().sol_write_buf,
+//                       sizeof(SerialOverLan::Instance().sol_write_buf)) == 0)
+//                       ||
+//               (memcmp(temp_write_buffer_1, temp_write_buffer_2,
+//                       sizeof(temp_write_buffer_2)) != 0))
+//             write(sefd, SerialOverLan::Instance().sol_write_buf,
+//                   strlen(SerialOverLan::Instance().sol_write_buf));
+//           if (sequences == 0) {
+//             memset(temp_write_buffer_1, 0, sizeof(temp_write_buffer_1));
+//             memcpy(temp_write_buffer_1,
+//             SerialOverLan::Instance().sol_write_buf,
+//                    strlen(SerialOverLan::Instance().sol_write_buf));
+//           } else if (sequences == 1) {
+//             memset(temp_write_buffer_2, 0, sizeof(temp_write_buffer_2));
+//             memcpy(temp_write_buffer_2,
+//             SerialOverLan::Instance().sol_write_buf,
+//                    strlen(SerialOverLan::Instance().sol_write_buf));
+//             sequences = 0;
+//           }
+//           sequences += 1;
+//           memset(SerialOverLan::Instance().sol_write_buf, 0,
+//                  sizeof(SerialOverLan::Instance().sol_write_buf));
+//         }
+//       }
+//     }
+
+//     //  pthread_mutex_unlock(&m_sol);
+//   }
+//   // free(trun_buf_front);
+//   // free(trun_buf_rear);
+//   close(sefd);
+//   // pthread_exit(NULL);
+//   return;
+// }
+
+} // namespace SOL
 void *ipmb_handler(void *bus_num) {
   log(info) << "\n\n======ipmb_handler start =============";
   plat_ipmb_init();
@@ -335,13 +658,28 @@ void *lanplus_handler(void *data) {
   int check_error = 1;
   int ndcontinue = 1;
   int continuetwise = 1;
-
   uint8_t mesg[1000];
   struct sockaddr_in clientAddr;
-
   socklen_t len;
-
   ipmi_inprogress = 0;
+  bool issol = false;
+  termios ttyS2;
+  int sefd;
+  sefd = open(SerialOverLan::Instance().DEVNAME.c_str(), O_RDWR);
+  if (sefd < 0) {
+    log(info) << "lanplus_handler error : serial port not open "
+              << SerialOverLan::Instance().DEVNAME;
+  }
+  if (tcgetattr(sefd, &ttyS2) < 0) {
+    log(info) << "lanplus handler error: tcgetattr" << strerror(errno);
+  } else {
+    init_comm(&ttyS2);
+    if (tcsetattr(sefd, TCSANOW, &ttyS2) < 0) {
+      log(info) << "lanplus handler error: tcsetattr" << strerror(errno);
+    } else {
+      issol = true;
+    }
+  }
 
   while (1) {
     len = sizeof(clientAddr);

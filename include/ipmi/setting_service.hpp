@@ -52,6 +52,7 @@
 #define POWER_USAGE_DB "/conf/ipmi/power.db"
 #define INTERFACE_FILE "/etc/network/interfaces"
 #define DNSSERVER_FILE "/etc/resolv.conf"
+
 #define HOSTNAME_FILE "/etc/hostname"
 #define DOMAINNAME_FILE "/etc/hosts"
 #define FAIL "\"CODE\":\"400\", \"MESSAGE\":\"FAIL\"}"
