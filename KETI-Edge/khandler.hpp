@@ -18,6 +18,7 @@ void *timer_handler(void);
 void *ipmb_handler(void *bus_num);
 
 void sel_generater(void);
+void wdt_msq(void);
 
 namespace SOL {
 void *sol_handler(void *data);

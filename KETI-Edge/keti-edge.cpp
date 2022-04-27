@@ -99,6 +99,9 @@ int main(void) {
 
   std::thread t_sel_generate(sel_generater);
 
+  // wdt msq 22.04.26
+  std::thread t_wdt_msq(wdt_msq);
+
   while (1) {
     pause();
   }
@@ -112,6 +115,7 @@ int main(void) {
   t_timer.join();
   t_psuserver.join();
   t_sel_generate.join();
+  t_wdt_msq.join();
 
   return 0;
 }

@@ -218,6 +218,11 @@ typedef struct {
   uint8_t data[];
 } ipmi_req_t;
 
+struct wdt_msq_t{
+  long type;
+  int flag = 0;
+};
+
 typedef struct {
   unsigned char owner;
   unsigned char lun;

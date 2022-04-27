@@ -1003,3 +1003,39 @@ void sel_generater(void) {
   cout << "sel generater " << endl;
   plat_sel_generater_add_entry(str, 0x6f);
 }
+
+void wdt_msq(void){
+  
+  int loop_count=0;
+  int msqid_key;
+  struct   msqid_ds msqstat;
+ 
+  //req msg queue create 
+  if ( -1 == ( msqid_key = msgget( (key_t)1037, IPC_CREAT | 0666))){
+    perror ("msgget in req fail");
+    exit(1);
+  }
+  
+  //msg queue reset
+  // msgctl(msqid_key, IPC_RMID, NULL);
+
+  wdt_msq_t msq_req;
+  wdt_msq_t msq_rsp;
+
+  msq_req.type = 1;
+  msq_req.flag = 1;
+  
+  cout << " msg snd "<<endl;
+  if ( -1 == msgsnd(msqid_key, &msq_req, sizeof(wdt_msq_t)-sizeof(long), 0))
+  {
+      perror( "msgsnd() in req실패");
+  }
+
+  cout << "wait rcv " << endl;
+    if ( -1 == msgrcv( msqid_key, &msq_rsp, sizeof(wdt_msq_t)-sizeof(long), 2, 0))
+    {
+      perror("msgrcv in req failed");      
+    }
+    
+  cout << " msg rcv " << msq_rsp.flag << endl;
+}

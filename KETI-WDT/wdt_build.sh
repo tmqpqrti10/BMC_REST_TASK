@@ -19,4 +19,4 @@ cp $wdt ../../target_sys/firmware/
 
 echo "scp ..."
 
-sshpass -p $password scp $wdt $id@$ip:$path
+#sshpass -p $password scp $wdt $id@$ip:$path
