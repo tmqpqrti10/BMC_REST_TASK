@@ -1,22 +1,23 @@
 #pragma once
 #include <redfish/stdafx.hpp>
 #include <redfish/resource.hpp>
+#include <ipmi/rest_get.hpp>
+#include <ipmi/rest_post.hpp>
+#include <ipmi/ipmi.hpp>
 
 #define SERVER_CERTIFICATE_CHAIN_PATH "/conf/ssl/rootca.crt"
 #define SERVER_PRIVATE_KEY_PATH "/conf/ssl/rootca.key"
 #define SERVER_TMP_DH_PATH "/conf/ssl/dh2048.pem"
 
 #define SERVER_REQUEST_TIMEOUT 10
-#define SERVER_ENTRY_PORT ":443"
-// #define SERVER_ENTRY_PORT ":8000"
+// #define SERVER_ENTRY_PORT ":443"
+#define SERVER_ENTRY_PORT ":8000"
 #define SERVER_ENTRY_POINT "http://0.0.0.0" SERVER_ENTRY_PORT
 
 #define MODULE_NAME "CM1"
 #define MODULE_TYPE "CM"
 #define CMM_ADDRESS "http://10.0.6.106:8000"
 #define HA_ADDRESS "http://10.0.6.107:644"
-
-
 
 
 class Handler

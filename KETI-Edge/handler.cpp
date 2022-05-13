@@ -14,7 +14,6 @@ extern int redfish_power_ctrl;
 Handler::Handler(utility::string_t _url, http_listener_config _config)
     : m_listener(_url, _config) {
   log(info) << "_url=" << _url;
-
   // Handler connection
   this->m_listener.support(methods::GET, std::bind(&Handler::handle_get, this,
                                                    std::placeholders::_1));
@@ -51,21 +50,112 @@ void Handler::handle_get(http_request _request) {
 
   http_response response;
   json::value response_json;
+  string rec_string;
 
   try {
 
+    rec_string.clear();
     if (uri_tokens.size() == 1 && uri_tokens[0] == "redfish") {
       json::value j;
       j[U(REDFISH_VERSION)] = json::value::string(U(ODATA_SERVICE_ROOT_ID));
-      report_last_command(uri);
+      // report_last_command(uri);
       _request.reply(status_codes::OK, j);
       return;
+    }
+    //rest
+    else {
+      
+      if( uri_tokens[0].find("?")){
+        uri_tokens = string_split(uri_tokens[0],'?');
+        if(uri_tokens[0]=="main"){
+          cout << " get main start" <<endl;
+          int menu = filtered_uri.find("=") + 1;
+          cout << filtered_uri[menu] <<endl;
+          menu = filtered_uri[menu] - 48;
+          Ipmiweb_GET::Get_Show_Main(menu,response_json);
+          cout << "recv "<<rec_string <<endl;
+          response.set_body(response_json);
+        }
+      } 
+        cout << "uri token " << uri_tokens[0] <<endl;
+        if(uri_tokens[0] == "fru"){
+          cout << " get fru " << endl;
+          Ipmiweb_GET::Get_Fru_Info(response_json);
+          cout << " fru json " << response_json << endl;
+          response.set_body(response_json);
+        }
+        else if ( uri_tokens[0] == "sensor"){
+          cout << " get sensor " << endl;
+          Ipmiweb_GET::Get_Sensor_Info(response_json);
+          cout << " sensor json " << response_json << endl;
+          response.set_body(response_json);
+        }
+        else if ( uri_tokens[0] == "eventlog"){
+          cout << " get sensor " << endl;
+          Ipmiweb_GET::Get_Eventlog(response_json);
+          cout << " sensor json " << response_json << endl;
+          response.set_body(response_json);
+        }
+        else if ( uri_tokens[0] == "ddns"){
+          cout << " get ddns " << endl;
+          Ipmiweb_GET::Get_DDNS_Info(response_json);
+          cout << " ddns json " << response_json << endl;
+          response.set_body(response_json);
+        }
+        else if ( uri_tokens[0] == "network"){
+          cout << " get lan info " <<endl;
+          Ipmiweb_GET::Get_Lan_Info(response_json);
+          cout << " lan info json " << response_json << endl;
+          response.set_body(response_json);
+        }
+        else if ( uri_tokens[0] == "ntp"){
+          cout << " get ntp info " <<endl;
+          Ipmiweb_GET::Get_Ntp_Info(response_json);
+          cout << " lan ntp json " << response_json << endl;
+          response.set_body(response_json);
+        }
+        else if ( uri_tokens[0] == "smtp"){
+          cout << " get smtp info " <<endl;
+          Ipmiweb_GET::Get_Smtp_Info(response_json,0);
+          cout << " lan smtp json " << response_json << endl;
+          response.set_body(response_json);
+        }
+        else if ( uri_tokens[0] == "ssl"){
+          cout << " get ssl info " <<endl;
+          Ipmiweb_GET::Get_Ssl_Info(response_json);
+          cout << " lan ssl json " << response_json << endl;
+          response.set_body(response_json);
+        }        
+        else if ( uri_tokens[0] == "activedir"){
+          cout << " get activedir info " <<endl;
+          Ipmiweb_GET::Get_Active_Dir(response_json);
+          cout << " lan activedir json " << response_json << endl;
+          response.set_body(response_json);
+        }
+        else if ( uri_tokens[0] == "ldap"){
+          cout << " get ldap info " <<endl;
+          Ipmiweb_GET::Get_Ldap(response_json);
+          cout << " lan ldap json " << response_json << endl;
+          response.set_body(response_json);
+        }
+        else if ( uri_tokens[0] == "radius"){
+          cout << " get ldap info " <<endl;
+          Ipmiweb_GET::Get_Radius(response_json);
+          cout << " lan radius json " << response_json << endl;
+          response.set_body(response_json);
+        }
+        else if ( uri_tokens[0] == "setting"){
+          cout << " get setting info " <<endl;
+          Ipmiweb_GET::Get_Setting_Service(response_json);
+          cout << " lan setting json " << response_json << endl;
+          response.set_body(response_json);
+        }        
     }
 
     // 위에부분은 task를 만들지 않고 내부적처리
 
     // 여기부턴 만들고 처리
-    task_number = generate_task_resource("GET", uri, jv, _request.headers());
+    // task_number = generate_task_resource("GET", uri, jv, _request.headers());
     response.headers().add("Access-Control-Allow-Origin", "*");
     response.headers().add("Access-Control-Allow-Credentials", "true");
     response.headers().add("Access-Control-Allow-Methods",
@@ -88,25 +178,27 @@ void Handler::handle_get(http_request _request) {
     //     response.set_status_code(status_codes::Unauthorized);
     // }
     // #3 uri로 들어온 레코드가 존재하는지
-    /*else*/ if (!record_is_exist(uri)) {
-      response.set_status_code(status_codes::NotFound);
-    }
+    // /*else*/ if (!record_is_exist(uri)) {
+    //   response.set_status_code(status_codes::NotFound);
+    // }
     // #4 모두 통과하면 해당 레코드 정보 GET
-    else {
-      // sync_ipmi(uri);
-      response.set_status_code(status_codes::OK);
-      response.set_body(record_get_json(uri));
-    }
+    // else {
+    //   // sync_ipmi(uri);
+    //   response.set_status_code(status_codes::OK);
+    //   response.set_body(record_get_json(uri));
+    // }
 
-    complete_task_resource(task_number);
+    // complete_task_resource(task_number);
 
-  } catch (json::json_exception &e) {
+  } 
+  catch (json::json_exception &e) {
     log(info) << "badRequest" << uri_tokens[0];
     _request.reply(status_codes::BadRequest);
     return;
   }
 
-  report_last_command(uri);
+  // report_last_command(uri);
+  response.set_status_code(status_codes::OK);
   _request.reply(response);
   return;
 }
@@ -151,7 +243,7 @@ void Handler::handle_delete(http_request _request) {
     treat_delete(_request, jv, response);
 
     complete_task_resource(task_number);
-    report_last_command(uri);
+    // report_last_command(uri);
   } catch (json::json_exception &e) {
     log(info) << "badRequest" << uri_tokens[0];
     _request.reply(status_codes::BadRequest);
@@ -219,7 +311,7 @@ void Handler::handle_patch(http_request _request) {
 
     complete_task_resource(task_number);
 
-    report_last_command(uri);
+    // report_last_command(uri);
     /**
      * brief
      */
@@ -411,13 +503,15 @@ void Handler::handle_patch(http_request _request) {
  */
 void Handler::handle_post(http_request _request) {
   log(info) << "Request method: POST";
+   
   string uri = _request.request_uri().to_string();
   vector<string> uri_tokens = string_split(uri, '/');
   string filtered_uri = make_path(uri_tokens);
   json::value jv = _request.extract_json().get();
   unsigned int task_number;
+  json::value rj;
 
-  log(info) << "Request URI : " << uri;
+  log(info) << "Request URI : " << filtered_uri;
   log(info) << "Request Body : " << _request.to_string();
 
   http_response response;
@@ -431,8 +525,23 @@ void Handler::handle_post(http_request _request) {
       return;
     }
 
-    task_number = generate_task_resource("POST", uri, jv, _request.headers());
+    if( uri_tokens[0] == "login" ){
+      cout << " start login " <<endl;
+      cout << jv["USERNAME"].as_string() <<endl;
+      string uname = jv["USERNAME"].as_string();
+      string pwd = jv["PASSWORD"].as_string();
+      int is_login=Ipmiweb_POST::Try_Login(uname,pwd);
+      cout << " end login " <<endl;
+      
+      if(is_login>0){
+      response_json["PRIVILEGE"] = json::value::string(to_string(is_login));
 
+      };
+    }
+    response.set_body(response_json);
+    response.set_status_code(status_codes::OK);
+    // task_number = generate_task_resource("POST", uri, jv, _request.headers());
+    
     response.headers().add("Access-Control-Allow-Origin", "*");
     response.headers().add("Access-Control-Allow-Credentials", "true");
     response.headers().add("Access-Control-Allow-Methods",
@@ -444,11 +553,11 @@ void Handler::handle_post(http_request _request) {
     response.headers().add("Access-Control-Expose-Headers",
                            "X-Auth-Token, Location");
 
-    treat_post(_request, jv, response);
+    // treat_post(_request, rj, response);
 
-    complete_task_resource(task_number);
+    // complete_task_resource(task_number);
 
-    report_last_command(uri);
+    // report_last_command(uri);
 
     // Account handling
     // if (filtered_uri == ODATA_ACCOUNT_ID)

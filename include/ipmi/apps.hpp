@@ -10,7 +10,7 @@
 #ifndef __APPS_HPP__
 #define __APPS_HPP__
 
-#define ConfigurationFileDir "/conf/ipmi/ipmiwatchdog.conf"
+#define ConfigurationFileDir "/etc/ipmiwatchdog.conf"
 #define IPMI_VERSION "V2.0"
 
 #define IPMI_DAEMON "Daemon"

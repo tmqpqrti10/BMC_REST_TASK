@@ -106,5 +106,7 @@ void plat_sel_threshold_add_entry(Sensor_tpye se_tpye, int se_num,
 void ipmi_find_sel_desc(uint8_t *offset, uint8_t *data, uint8_t se_type,
                         const char *ev_desc, uint8_t ev_type);
 void plat_sel_generater_add_entry(const char *ev_desc, uint8_t ev_type);
+void ipmi_get_event_desc(char *desc, sel_msg_t *rec);
+
 
 #endif

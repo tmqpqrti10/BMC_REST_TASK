@@ -25,6 +25,8 @@ SET(
     ${STATIC_LIBS_DIR}/util/pmbus.cpp
     ${STATIC_LIBS_DIR}/sol/sol.cpp
     ${STATIC_LIBS_DIR}/util/KETI_stdx.cpp
+    ${STATIC_LIBS_DIR}/web/rest_get.cpp
+    ${STATIC_LIBS_DIR}/web/rest_post.cpp
 )
 
 ADD_LIBRARY(apps STATIC ${SOURCE_FILES})

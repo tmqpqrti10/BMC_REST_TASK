@@ -89,18 +89,18 @@ int main(void) {
   std::thread t_lanplus(lanplus_handler, &sockfd);
   std::thread t_dcmi(dcmi_power_handler, &sockfd);
   std::thread t_redfish(redfish_handler, &sockfd);
-  std::thread t_rest(rest_handler, &sockfd);
+  // std::thread t_rest(rest_handler, &sockfd);
   std::thread t_ssdp(ssdp_handler);
-  std::thread t_psuserver(psu_handler);
+  // std::thread t_psuserver(psu_handler);
   int bus = IPMB_I2C_BUS;
   std::thread t_ipmb(ipmb_handler, &bus);
   // std::thread t_ssdp(ssdp_handler, &sockfd);
   std::thread t_timer(timer_handler);
 
-  std::thread t_sel_generate(sel_generater);
+  // std::thread t_sel_generate(sel_generater);
 
   // wdt msq 22.04.26
-  std::thread t_wdt_msq(wdt_msq);
+  // std::thread t_wdt_msq(wdt_msq);
 
   while (1) {
     pause();
@@ -110,12 +110,12 @@ int main(void) {
   t_lanplus.join();
   t_ipmb.join();
   t_dcmi.join();
-  t_rest.join();
+  // t_rest.join();
   t_ssdp.join();
   t_timer.join();
-  t_psuserver.join();
-  t_sel_generate.join();
-  t_wdt_msq.join();
+  // t_psuserver.join();
+  // t_sel_generate.join();
+  // t_wdt_msq.join();
 
   return 0;
 }
